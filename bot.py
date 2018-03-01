@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""Slack IRC/incoming-webhooks bot for tweetfleet."""
+
+
 import os
 import re
 import json
@@ -57,8 +60,8 @@ def _issue_details(match, send, speaker, command, *args):
     url = "https://api.github.com/repos/ccpgames/esi-issues/issues/{}".format(
         match.groupdict()["gh_issue"]
     )
-    details = _do_request(url)
-    if details is None:
+    status, details = _do_request(url)
+    if status >= 400:
         send("failed to lookup details for issue {}".format(command))
     else:
         send("{} ({})".format(details["html_url"], details["state"]))
@@ -92,16 +95,14 @@ def _esi_request(match, send, speaker, command, *args):
             "?" * int(params != ""),
             params,
         )
-        res = _do_request(url)
-        if res is not None:
-            if not _send_multiline("{}\n```{}```".format(
+        status, res = _do_request(url)
+        if not _send_multiline("{}\n{}\n```{}```".format(
                 url,
+                status,
                 json.dumps(res, sort_keys=True, indent=4)
             )):
-                # fallback in case webhook fails
-                send("`{}`".format(res))
-        else:
-            send("failed to fetch /{}{}".format(version, path))
+            # fallback in case webhook fails
+            send("{} ({}): `{}`".format(url, status, res))
     else:
         send("failed to find GET {} in the {} ESI spec".format(path, version))
 
@@ -110,8 +111,8 @@ def _send_multiline(text):
     """Send a multiline message via slack's incoming webhooks."""
 
     lines = text.splitlines()
-    content = lines[:21]
-    if len(lines) > 21:
+    content = lines[:25]
+    if len(lines) > 25:
         content.append("<content snipped>")
 
     try:
@@ -136,6 +137,7 @@ def _valid_path(path, version):
         if re.match(re.sub(r"{.*}", "[^/]+", spec_path), path):
             # we only make get requests
             return "get" in operations
+    return False
 
 
 def _help(send, speaker, command, *args):
@@ -175,8 +177,11 @@ def _do_refresh():
     updates = {}
     for version, details in ESI_SPECS.items():
         if not details["spec"] or details["timestamp"] < time.time() + 300:
-            spec = _do_request("{}/{}/swagger.json".format(ESI, version))
-            if spec:
+            status, spec = _do_request("{}/{}/swagger.json".format(
+                ESI,
+                version,
+            ))
+            if status == 200:
                 updates[version] = {"timestamp": time.time(), "spec": spec}
 
     ESI_SPECS.update(updates)
@@ -184,14 +189,21 @@ def _do_refresh():
 
 
 def _do_request(url, *args, **kwargs):
+    """Make a GET request, return the status code and json response."""
+
     try:
         res = SESSION.get(url, *args, **kwargs)
         res.raise_for_status()
-        return res.json()
     except Exception as error:
         LOG.warning("request to %s failed: %r", url, error)
     else:
         LOG.info("requested: %s", url)
+    finally:
+        try:
+            content = res.json()
+        except Exception:
+            content = res.text
+        return res.status_code, content
 
 
 # nest commands under a prefix
