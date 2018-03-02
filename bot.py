@@ -115,6 +115,13 @@ def _send_multiline(text):
     if len(lines) > 25:
         content.append("<content snipped>")
 
+    backticks = 0
+    for line in content:
+        backticks += line.count("```")
+
+    if backticks % 2 != 0:
+        content.append("```")
+
     try:
         res = SESSION.post(WEBHOOK, json={
             "text": "\n".join(content),
