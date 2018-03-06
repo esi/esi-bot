@@ -107,24 +107,25 @@ def _esi_request(match, send, speaker, command, *args):
         send("failed to find GET {} in the {} ESI spec".format(path, version))
 
 
+def _clean_multiline_text(text):
+    """Cleans multiline text, if it's longer than slack's limit."""
+
+    content = text[:2900]
+    if content != text:
+        content = "{}\n<content snipped>".format(content)
+
+    if content.count("```") % 2 != 0:
+        content = "{}\n```".format(content)
+
+    return content
+
+
 def _send_multiline(text):
     """Send a multiline message via slack's incoming webhooks."""
 
-    lines = text.splitlines()
-    content = lines[:25]
-    if len(lines) > 25:
-        content.append("<content snipped>")
-
-    backticks = 0
-    for line in content:
-        backticks += line.count("```")
-
-    if backticks % 2 != 0:
-        content.append("```")
-
     try:
         res = SESSION.post(WEBHOOK, json={
-            "text": "\n".join(content),
+            "text": _clean_multiline_text(text),
             "username": "ESI (bot)",
             "icon_emoji": ":techco:",
         })
