@@ -29,6 +29,8 @@ if not WEBHOOK:
 
 
 def _build_session():
+    """Builds a requests session with a pool and retries."""
+
     ses = requests.Session()
     ses.headers["User-Agent"] = "esi-bot/0.0.1 -- this is the slack ESI bot"
     adapt = HTTPAdapter(max_retries=3, pool_connections=10, pool_maxsize=100)
@@ -41,6 +43,8 @@ SESSION = _build_session()
 
 
 def _channel_request(send, speaker, command, *args):
+    """Invite request for new channels (TODO)."""
+
     send((
         "I can't do that right now {}. "
         "ask @ccp_snowedin to add me in another channel"
@@ -48,6 +52,8 @@ def _channel_request(send, speaker, command, *args):
 
 
 def _hello_response(send, speaker, command, *args):
+    """Someone has said hello to us."""
+
     if "whatup" in args:
         send("not much. whatup {}".format(speaker))
     elif command in ("o7", "o/"):
@@ -57,10 +63,14 @@ def _hello_response(send, speaker, command, *args):
 
 
 def _issue_details(match, send, speaker, command, *args):
-    url = "https://api.github.com/repos/ccpgames/esi-issues/issues/{}".format(
-        match.groupdict()["gh_issue"]
+    """Look up esi-issue details on github."""
+
+    status, details = _do_request(
+        "https://api.github.com/repos/ccpgames/esi-issues/issues/{}".format(
+            match.groupdict()["gh_issue"]
+        )
     )
-    status, details = _do_request(url)
+
     if status >= 400:
         send("failed to lookup details for issue {}".format(command))
     else:
@@ -68,6 +78,8 @@ def _issue_details(match, send, speaker, command, *args):
 
 
 def _esi_request(match, send, speaker, command, *args):
+    """Make an ESI GET request, if the path is known."""
+
     version, *req_sections = match.groupdict()["esi_path"].split("/")
     if re.match(r"^v[0-9]+$", version):
         send("sorry, but I only support latest, legacy or dev versions")
@@ -149,6 +161,8 @@ def _valid_path(path, version):
 
 
 def _help(send, speaker, command, *args):
+    """Return basic help on available commands."""
+
     commands = []  # list of command help strings
     for targets in COMMANDS:
         if isinstance(targets, (list, tuple)):
@@ -163,6 +177,8 @@ def _help(send, speaker, command, *args):
 
 
 def _refresh_spec(send, speaker, command, *args):
+    """Refresh internal specs."""
+
     refreshed = _do_refresh()
     if refreshed:
         send("I refreshed my internal copy of the {}{}{} spec{}".format(
@@ -221,8 +237,8 @@ PREFIX = "!esi"
 # can be a list/tuple, a regex pattern, or a single string
 COMMANDS = {
     "help": _help,
-    re.compile(r"^/(?P<esi_path>.*)$"): _esi_request,
-    re.compile(r"^#(?P<gh_issue>[0-9]*)$"): _issue_details,
+    re.compile(r"^/(?P<esi_path>.+)$"): _esi_request,
+    re.compile(r"^#(?P<gh_issue>[0-9]+)$"): _issue_details,
     ("hey", "hi", "hello", "o7", "o/"): _hello_response,
     ("join", "invite"): _channel_request,
     "refresh": _refresh_spec,
