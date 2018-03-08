@@ -22,6 +22,7 @@ ESI_SPECS = {
 }
 ESI = "https://esi.tech.ccp.is"
 WEBHOOK = os.environ.get("SLACK_WEBHOOK")
+STATUS = {"timestamp": 0, "status": []}
 
 
 if not WEBHOOK:
@@ -191,6 +192,31 @@ def _refresh_spec(send, speaker, command, *args):
         send("my internal specs are up to date (try again later)")
 
 
+def _status(send, speaker, command, *args):
+    """Generic ESI status."""
+
+    now = time.time()
+    if now - STATUS["timestamp"] > 60:
+        code, esi_status = _do_request("{}/status.json".format(ESI))
+        if code == 200:
+            STATUS["status"] = esi_status
+        else:
+            send(":fire: (failed to fetch status.json)")
+            return
+
+    red = yellow = 0
+    for status in STATUS["status"]:
+        red += status["status"] == "red"
+        yellow += status["status"] == "yellow"
+
+    if red:
+        send(":fire: {} red {} yellow :fire:".format(red, yellow))
+    elif yellow:
+        send(":fire_engine: {} yellow :fire_engine:")
+    else:
+        send(":ok_hand:")
+
+
 def _do_refresh():
     """DRY helper to refresh all stale ESI specs.
 
@@ -242,6 +268,7 @@ COMMANDS = {
     ("hey", "hi", "hello", "o7", "o/"): _hello_response,
     ("join", "invite"): _channel_request,
     "refresh": _refresh_spec,
+    "status": _status,
 }
 
 
