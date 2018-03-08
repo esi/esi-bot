@@ -212,7 +212,7 @@ def _status(send, speaker, command, *args):
     if red:
         send(":fire: {} red {} yellow :fire:".format(red, yellow))
     elif yellow:
-        send(":fire_engine: {} yellow :fire_engine:")
+        send(":fire_engine: {} yellow :fire_engine:".format(yellow))
     else:
         send(":ok_hand:")
 
