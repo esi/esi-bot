@@ -47,7 +47,7 @@ def _channel_request(send, speaker, command, *args):
     """Invite request for new channels (TODO)."""
 
     send((
-        "I can't do that right now {}. "
+        "I can't do that right now {} . "
         "ask @ccp_snowedin to add me in another channel"
     ).format(speaker))
 
@@ -280,7 +280,7 @@ def _bot_repo(send, speaker, *_):
     """Return a link to the repo for this bot."""
 
     send((
-        "I'm an open source bot {}. If you want to contribute or are curious "
+        "I'm an open source bot {} . If you want to contribute or are curious "
         "how I work, my source is available for you to browse here: "
         "https://github.com/ccpgames/esi-bot/"
     ).format(speaker))
