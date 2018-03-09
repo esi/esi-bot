@@ -217,6 +217,75 @@ def _status(send, speaker, command, *args):
         send(":ok_hand:")
 
 
+def _id_gist(send, *_):
+    """Return a link to the ID ranges gist."""
+
+    send("https://gist.github.com/a-tal/5ff5199fdbeb745b77cb633b7f4400bb")
+
+
+def _waffle(send, *_):
+    """Return a link to the ESI issues waffle board."""
+
+    send("https://waffle.io/ccpgames/esi-issues")
+
+
+def _faq(send, *_):
+    """Return a link to the ESI issues FAQ."""
+
+    send("https://github.com/ccpgames/esi-issues#faq")
+
+
+def _new_issue(send, speaker, *_):
+
+    send((
+        "You can make a new issue with this link {}: "
+        "https://github.com/ccpgames/esi-issues/issues/new"
+    ).format(speaker))
+
+
+def _issues(send, *_):
+    """Return a link to ESI issues."""
+
+    send("https://github.com/ccpgames/esi-issues/issues/")
+
+
+def _sso_issues(send, *_):
+    """Return a link to SSO issues."""
+
+    send("https://github.com/ccpgames/sso-issues/issues/")
+
+
+def _ui(send, *_):
+    """Return a link to the ui (v3)."""
+
+    send("{}/ui/".format(ESI))
+
+
+def _legacy_ui(send, *_):
+    """Return links to the v2 ui."""
+
+    send((
+        "Legacy (v2) UIs are still available at {esi}/latest/ "
+        "{esi}/dev/ and {esi}/legacy/"
+    ).format(esi=ESI))
+
+
+def _diff(send, *_):
+    """Return a link to the ESI spec diffs page."""
+
+    send("{}/diff/latest/dev/".format(ESI))
+
+
+def _bot_repo(send, speaker, *_):
+    """Return a link to the repo for this bot."""
+
+    send((
+        "I'm an open source bot {}. If you want to contribute or are curious "
+        "how I work, my source is available for you to browse here: "
+        "https://github.com/ccpgames/esi-bot/"
+    ).format(speaker))
+
+
 def _do_refresh():
     """DRY helper to refresh all stale ESI specs.
 
@@ -269,6 +338,16 @@ COMMANDS = {
     ("join", "invite"): _channel_request,
     "refresh": _refresh_spec,
     "status": _status,
+    ("id", "ids", "ranges"): _id_gist,
+    "waffle": _waffle,
+    "faq": _faq,
+    ("new", "bug"): _new_issue,
+    "issues": _issues,
+    "sso": _sso_issues,
+    "ui": _ui,
+    ("legacy", "v2ui"): _legacy_ui,
+    ("diff", "diffs"): _diff,
+    ("repo", "source"): _bot_repo,
 }
 
 
