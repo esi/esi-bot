@@ -1,2 +1,4 @@
-irc3
-requests
+slackclient>=1.2.1
+requests>=2.18.4
+setuphelpers>=0.1.2
+gevent>=1.2.2
