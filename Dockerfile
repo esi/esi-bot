@@ -1,7 +1,7 @@
 # esi-bot
 
 FROM python:3.6
-MAINTAINER Adam Talsma <se-adam.talsma@ccpgames.com>
+MAINTAINER Adam Talsma <adam@talsma.ca>
 
 ADD requirements.txt /bot/
 RUN pip install -qr /bot/requirements.txt
@@ -14,8 +14,10 @@ WORKDIR /bot/
 
 RUN pip install -q . \
     && groupadd -r esibot \
-    && useradd -r -g esibot -d /bot -s /usr/sbin/nologin -c "esibot" esibot \
-    && chown -R esibot:esibot /bot
+    && useradd -r -g esibot -d / -s /usr/sbin/nologin -c "esibot" esibot \
+    && rm -rf /bot
+
+WORKDIR /
 
 USER esibot
 CMD esi-bot
