@@ -13,6 +13,7 @@ from esi_bot import __version__
 
 
 STATUS = {"timestamp": 0, "status": []}
+ESI_ISSUES = "https://github.com/ccpgames/esi-issues/"
 
 
 def _fmt_speaker(msg):
@@ -143,19 +144,39 @@ def faq(*_):
 
 @command(trigger=("new", "bug"))
 def new(msg):
-    """Return a link to create a new ESI issue."""
+    """Return a link to open a new ESI bug."""
 
     return (
-        "You can make a new issue with this link{}: "
-        "https://github.com/ccpgames/esi-issues/issues/new"
-    ).format(_fmt_speaker(msg))
+        "You can open a new bug with this link{}: "
+        "{}issues/new?template=bug.md"
+    ).format(_fmt_speaker(msg), ESI_ISSUES)
+
+
+@command(trigger=("feature", "fr"))
+def feature(msg):
+    """Return a link to create a new feature request."""
+
+    return (
+        "You can make a new feature request with this link{}: "
+        "{}issues/new?template=feature_request.md"
+    ).format(_fmt_speaker(msg), ESI_ISSUES)
+
+
+@command
+def inconsistency(msg):
+    """Return a link to report an inconsistency."""
+
+    return (
+        "You can report an inconsistency with this link{}: "
+        "{}issues/new?template=inconsistency.md"
+    ).format(_fmt_speaker(msg), ESI_ISSUES)
 
 
 @command
 def issues(*_):
     """Return a link to ESI issues."""
 
-    return "https://github.com/ccpgames/esi-issues/issues/"
+    return ESI_ISSUES
 
 
 @command
@@ -201,7 +222,7 @@ def source(msg):
 
 
 @command
-def version(msg):
+def version(*_):
     """Display ESI-bot's running version."""
 
     return "ESI-bot version {}".format(__version__)
