@@ -20,9 +20,7 @@ def request(match, *_):
     """Make an ESI GET request, if the path is known."""
 
     version, *req_sections = match.groupdict()["esi_path"].split("/")
-    if re.match(r"^v[0-9]+$", version):
-        return "sorry, but I only support latest, legacy or dev versions"
-    elif version not in ("latest", "legacy", "dev"):
+    if version not in ESI_SPECS:
         req_sections.insert(0, version)
         version = "latest"
 
@@ -75,6 +73,12 @@ def do_refresh():
     Returns:
         list of updated ESI spec versions
     """
+
+    status, versions = do_request("{}/versions/".format(ESI))
+    if status == 200:
+        for version in versions:
+            if version not in ESI_SPECS:
+                ESI_SPECS[version] = {"timestamp": 0, "spec": {}}
 
     updates = {}
     for version, details in ESI_SPECS.items():
