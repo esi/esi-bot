@@ -4,6 +4,7 @@
 import re
 import json
 import time
+import html
 
 from esi_bot import ESI
 from esi_bot import command
@@ -34,6 +35,7 @@ def request(match, *_):
             final_path, params = req_sections.pop().split("?")
             req_sections.append(final_path)
 
+    params = html.unescape(params)
     path = "/{}/".format("/".join(x for x in req_sections if x))
     if _valid_path(path, version):
         url = "{}/{}{}{}{}".format(
