@@ -41,6 +41,11 @@ STARTUP_MSGS = (
     ":frogsiren: someone kicked me :frogsiren:",
 )
 
+REACTION_TRIGGERS = {
+    re.compile(r"(^|.*( |!))crest( |$|\!|\?|\.)", re.IGNORECASE): "rip",
+    re.compile(r"(^|.*( |!))xml(api)?( |$|\!|\?|\.)", re.IGNORECASE): "wreck",
+}
+
 
 class Processor(object):
     """Execute ESI-bot commands based on incoming messages."""
@@ -59,7 +64,6 @@ class Processor(object):
 
         joined = self._channels.enter_channels()
         if joined:
-            self._greenlet = gevent.spawn(self.count_the_days)
             self._send_msg(random.choice(STARTUP_MSGS))
         return joined
 
@@ -73,37 +77,6 @@ class Processor(object):
             username="ESI (bot)",
             icon_emoji=":techco:",
         )
-
-    def count_the_days(self):
-        """Announce the days until XMLAPI and CREST shut down."""
-
-        esi_era_begins = datetime(year=2018, month=5, day=8, hour=11)
-        last_announced = datetime.utcnow()
-        while True:
-            if datetime.utcnow() > esi_era_begins:
-                return
-
-            next_announce = datetime(
-                year=last_announced.year,
-                month=last_announced.month,
-                day=last_announced.day + int(last_announced.hour >= 11),
-                hour=11,
-            )
-
-            gevent.sleep((next_announce - datetime.utcnow()).total_seconds())
-
-            days_remain = (esi_era_begins - next_announce).days
-
-            self._send_msg((
-                "Daily reminder, {} day{} remain{} until "
-                "XMLAPI and CREST will be shutdown"
-            ).format(
-                days_remain,
-                "s" * int(days_remain != 1),
-                "s" * int(days_remain == 1),
-            ) if days_remain > 0 else "RIP XMLAPI and CREST. Long live ESI!")
-
-            last_announced = next_announce
 
     def process_event(self, event):
         """Receive and process any/all Slack RTM API events."""
@@ -137,6 +110,15 @@ class Processor(object):
                         _clean_multiline_text(reply),
                         channel=event["channel"],
                     )
+            else:
+                for trigger, reaction in REACTION_TRIGGERS.items():
+                    if re.match(trigger, event["text"]):
+                        self._slack.api_call(
+                            "reactions.add",
+                            name=reaction,
+                            channel=event["channel"],
+                            timestamp=event["ts"],
+                        )
 
 
 def _process_msg(msg):
