@@ -6,8 +6,6 @@ import re
 import random
 from datetime import datetime
 
-import gevent
-
 from esi_bot import LOG
 from esi_bot import MESSAGE
 from esi_bot import COMMANDS
