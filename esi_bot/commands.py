@@ -60,7 +60,7 @@ def hello(msg):
     return "hey{} howsit goin?".format(_fmt_speaker(msg))
 
 
-@command(trigger=re.compile(r"^#(?P<gh_issue>[0-9]+)$"))
+@command(trigger=re.compile(r"^#?(?P<gh_issue>[0-9]+)$"))
 def issue(match, msg):
     """Look up ESI-issue details on GitHub."""
 
