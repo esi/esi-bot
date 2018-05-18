@@ -20,7 +20,7 @@ from requests.adapters import HTTPAdapter
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.INFO)
 
-ESI = "https://esi.tech.ccp.is"
+ESI = "https://esi.evetech.net"
 MESSAGE = namedtuple("Message", ("speaker", "command", "args"))
 COMMANDS = {}  # trigger: function
 EXTENDED_HELP = {}  # name: docstring
@@ -31,7 +31,7 @@ def _build_session():
     """Builds a requests session with a pool and retries."""
 
     ses = requests.Session()
-    ses.headers["User-Agent"] = "esi-bot/0.0.1 -- this is the slack ESI bot"
+    ses.headers["User-Agent"] = "esi-bot/{}".format(__version__)
     adapt = HTTPAdapter(max_retries=3, pool_connections=10, pool_maxsize=100)
     ses.mount("http://", adapt)
     ses.mount("https://", adapt)

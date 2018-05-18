@@ -13,7 +13,7 @@ from esi_bot import __version__
 
 
 STATUS = {"timestamp": 0, "status": []}
-ESI_ISSUES = "https://github.com/ccpgames/esi-issues/"
+ESI_ISSUES = "https://github.com/esi/esi-issues/"
 
 
 def _fmt_speaker(msg):
@@ -65,7 +65,7 @@ def issue(match, msg):
     """Look up ESI-issue details on GitHub."""
 
     code, details = do_request(
-        "https://api.github.com/repos/ccpgames/esi-issues/issues/{}".format(
+        "https://api.github.com/repos/esi/esi-issues/issues/{}".format(
             match.groupdict()["gh_issue"]
         )
     )
@@ -132,14 +132,14 @@ def ids(*_):
 def waffle(*_):
     """Return a link to the ESI issues waffle board."""
 
-    return "https://waffle.io/ccpgames/esi-issues"
+    return "https://waffle.io/esi/esi-issues"
 
 
 @command
 def faq(*_):
     """Return a link to the ESI issues FAQ."""
 
-    return "https://github.com/ccpgames/esi-issues#faq"
+    return "{}#faq".format(ESI_ISSUES)
 
 
 @command(trigger=("new", "bug"))
@@ -217,7 +217,7 @@ def source(msg):
     return (
         "I'm an open source bot{}. If you want to contribute or are curious "
         "how I work, my source is available for you to browse here: "
-        "https://github.com/ccpgames/esi-bot/"
+        "https://github.com/esi/esi-bot/"
     ).format(_fmt_speaker(msg))
 
 
