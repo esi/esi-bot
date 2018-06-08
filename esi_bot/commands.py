@@ -99,9 +99,9 @@ def status(*_):
     yellow_routes = []
     for item in STATUS["status"]:
         if item["status"] == "red":
-            red_routes.append("{} {}".format(item["method"], item["route"]))
+            red_routes.append("{} {}".format(item["method"].upper(), item["route"]))
         elif item["status"] == "yellow":
-            yellow_routes.append("{} {}".format(item["method"], item["route"]))
+            yellow_routes.append("{} {}".format(item["method"].upper(), item["route"]))
 
     if red_routes:
         return ":fire: {} red{} {} yellow{} :fire:".format(
