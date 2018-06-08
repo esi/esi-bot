@@ -49,7 +49,7 @@ def get_help(msg):
     )
 
 
-@command(trigger=("hey", "hi", "hello", "o7", "o/"))
+@command(trigger=("hey", "hi", "hello", "o7", "7o", "o/"))
 def hello(msg):
     """TIL you need help to say hello."""
 
@@ -143,7 +143,7 @@ def faq(*_):
     return "{}#faq".format(ESI_ISSUES)
 
 
-@command(trigger=("new", "bug"))
+@command(trigger=("new", "bug", "br"))
 def new(msg):
     """Return a link to open a new ESI bug."""
 
@@ -153,7 +153,7 @@ def new(msg):
     ).format(_fmt_speaker(msg), ESI_ISSUES)
 
 
-@command(trigger=("feature", "fr"))
+@command(trigger=("feature", "fr", "enhancement"))
 def feature(msg):
     """Return a link to create a new feature request."""
 
