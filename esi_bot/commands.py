@@ -78,8 +78,9 @@ def issue(match, msg):
 def _status_str(statuses):
     """Generate a string to describe the route statuses."""
 
-    return " ({})".format(", ".join(sorted(statuses))) \
-        if statuses and len(statuses) < 11 else ""
+    return " ({})".format(", ".join(
+        "`{}`".format(x) for x in sorted(statuses)
+    )) if statuses and len(statuses) < 11 else ""
 
 
 @command
