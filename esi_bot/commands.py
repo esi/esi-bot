@@ -49,7 +49,7 @@ def get_help(msg):
     )
 
 
-@command(trigger=("hey", "hi", "hello", "o7", "o/"))
+@command(trigger=("hey", "hi", "hello", "o7", "7o", "o/"))
 def hello(msg):
     """TIL you need help to say hello."""
 
@@ -78,9 +78,7 @@ def issue(match, msg):
 def _status_str(statuses):
     """Generate a string to describe the route statuses."""
 
-    return " ({})".format(", ".join(
-        "`{}`".format(x) for x in sorted(statuses)
-    )) if statuses and len(statuses) < 11 else ""
+    return " ```{}```".format("\n".join(sorted(statuses))) if statuses and len(statuses) < 11 else ""
 
 
 @command
@@ -99,9 +97,9 @@ def status(*_):
     yellow_routes = []
     for item in STATUS["status"]:
         if item["status"] == "red":
-            red_routes.append("{} {}".format(item["method"], item["route"]))
+            red_routes.append("{} {}".format(item["method"].upper(), item["route"]))
         elif item["status"] == "yellow":
-            yellow_routes.append("{} {}".format(item["method"], item["route"]))
+            yellow_routes.append("{} {}".format(item["method"].upper(), item["route"]))
 
     if red_routes:
         return ":fire: {} red{} {} yellow{} :fire:".format(
@@ -143,7 +141,7 @@ def faq(*_):
     return "{}#faq".format(ESI_ISSUES)
 
 
-@command(trigger=("new", "bug"))
+@command(trigger=("new", "bug", "br"))
 def new(msg):
     """Return a link to open a new ESI bug."""
 
@@ -153,7 +151,7 @@ def new(msg):
     ).format(_fmt_speaker(msg), ESI_ISSUES)
 
 
-@command(trigger=("feature", "fr"))
+@command(trigger=("feature", "fr", "enhancement"))
 def feature(msg):
     """Return a link to create a new feature request."""
 
