@@ -93,7 +93,7 @@ class Processor(object):
                 user,
                 event["text"],
             )
-            
+
             # PEOPLE SHOULD BE FREE TO TYPE IN ALL CAPS
             event["text"] = event["text"].lower()
 

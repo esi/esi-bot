@@ -78,7 +78,9 @@ def issue(match, msg):
 def _status_str(statuses):
     """Generate a string to describe the route statuses."""
 
-    return " ```{}```".format("\n".join(sorted(statuses))) if statuses and len(statuses) < 11 else ""
+    return " ```{}```".format(
+        "\n".join(sorted(statuses))
+    ) if statuses and len(statuses) < 11 else ""
 
 
 @command
@@ -97,9 +99,15 @@ def status(*_):
     yellow_routes = []
     for item in STATUS["status"]:
         if item["status"] == "red":
-            red_routes.append("{} {}".format(item["method"].upper(), item["route"]))
+            red_routes.append("{} {}".format(
+                item["method"].upper(),
+                item["route"],
+            ))
         elif item["status"] == "yellow":
-            yellow_routes.append("{} {}".format(item["method"].upper(), item["route"]))
+            yellow_routes.append("{} {}".format(
+                item["method"].upper(),
+                item["route"],
+            ))
 
     if red_routes:
         return ":fire: {} red{} {} yellow{} :fire:".format(
