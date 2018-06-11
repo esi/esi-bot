@@ -4,6 +4,7 @@
 import re
 import time
 import json
+from collections import Counter
 
 from esi_bot import ESI
 from esi_bot import command
@@ -82,9 +83,22 @@ def issue(match, msg):
 def _status_str(statuses):
     """Generate a string to describe the route statuses."""
 
-    return " ```{}```".format(
-        "\n".join(sorted(statuses))
-    ) if statuses and len(statuses) < 11 else ""
+    if statuses:
+        if len(statuses) < 9:
+            lines = ["{} {}".format(
+                route["method"].upper(),
+                route["route"]
+            ) for route in statuses]
+        else:
+            # Assuming that all ESI routes only have a single tag.
+            counter = Counter([route["tags"][0] for route in statuses])
+            lines = ["{} in {}".format(
+                count,
+                tag
+            ) for tag, count in counter.items()]
+        return "```{}```".format("\n".join(lines))
+    else:
+        return ""
 
 
 @command
@@ -99,33 +113,33 @@ def status(*_):
         else:
             return ":fire: (failed to fetch status.json)"
 
-    red_routes = []
-    yellow_routes = []
-    for item in STATUS["status"]:
-        if item["status"] == "red":
-            red_routes.append("{} {}".format(
-                item["method"].upper(),
-                item["route"],
-            ))
-        elif item["status"] == "yellow":
-            yellow_routes.append("{} {}".format(
-                item["method"].upper(),
-                item["route"],
-            ))
+    red_routes = [route for route in STATUS["status"] if
+                  route["status"] == "red"]
+    yellow_routes = [route for route in STATUS["status"] if
+                     route["status"] == "yellow"]
 
+    slow_route_count = len(red_routes) + len(yellow_routes)
+    slow_route_ratio = slow_route_count / len(STATUS["status"])
+    if slow_route_ratio > 0.3:
+        return ":fire:" * round(slow_route_ratio * 10)
+
+    status_messages = []
     if red_routes:
-        return ":fire: {} red{} {} yellow{} :fire:".format(
-            len(red_routes),
-            _status_str(red_routes),
-            len(yellow_routes),
-            _status_str(yellow_routes),
+        status_messages.append(
+            ":fire: {} red :fire: {}".format(
+                len(red_routes),
+                _status_str(red_routes),
+            )
         )
-    elif yellow_routes:
-        return ":fire_engine: {} yellow{} :fire_engine:".format(
-            len(yellow_routes),
-            _status_str(yellow_routes),
+    if yellow_routes:
+        status_messages.append(
+            ":fire_engine: {} yellow :fire_engine: {}".format(
+                len(yellow_routes),
+                _status_str(yellow_routes),
+            )
         )
-    return ":ok_hand:"
+
+    return "\n".join(status_messages) if status_messages else ":ok_hand:"
 
 
 @command(trigger=("id", "ids", "ranges"))
