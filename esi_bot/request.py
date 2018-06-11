@@ -17,7 +17,7 @@ ESI_SPECS = {
 
 
 @command(trigger=re.compile(
-    r"^(https://(esi\.evetech\.net|esi\.tech\.ccp\.is))?/(?P<esi_path>.+)$"
+    r"^<?(https://esi\.(evetech\.net|tech\.ccp\.is))?/(?P<esi_path>.+?)>?$"
 ))
 def request(match, *_):
     """Make an ESI GET request, if the path is known."""
