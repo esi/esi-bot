@@ -59,6 +59,8 @@ def hello(msg):
         return "not much. whatup{}".format(_fmt_speaker(msg))
     elif msg.command in ("o7", "o/"):
         return "o7{}".format(_fmt_speaker(msg))
+    elif msg.command == "7o":
+        return "7o{}".format(_fmt_speaker(msg))
     return "hey{} howsit goin?".format(_fmt_speaker(msg))
 
 
