@@ -3,6 +3,7 @@
 
 import re
 import time
+import json
 
 from esi_bot import ESI
 from esi_bot import command
@@ -233,3 +234,23 @@ def version(*_):
     """Display ESI-bot's running version."""
 
     return "ESI-bot version {}".format(__version__)
+
+
+@command(trigger=("tq", "tranquility"))
+def tq_status(*_):
+    """Display current status of Tranquility, the main game server."""
+
+    tq = do_request("{}/dev/status/".format(ESI))[1]
+    return "Tranquility status: ```{}```".format(
+        json.dumps(tq, sort_keys=True, indent=4)
+    )
+
+
+@command(trigger=("sisi", "singularity"))
+def sisi_status(*_):
+    """Display current status of Singularity, the main test server."""
+
+    sisi = do_request("{}/dev/status/?datasource=singularity".format(ESI))[1]
+    return "Singularity status: ```{}```".format(
+        json.dumps(sisi, sort_keys=True, indent=4)
+    )
