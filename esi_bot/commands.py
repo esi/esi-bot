@@ -15,6 +15,7 @@ from esi_bot import __version__
 
 STATUS = {"timestamp": 0, "status": []}
 ESI_ISSUES = "https://github.com/esi/esi-issues/"
+ESI_DOCS = "https://docs.esi.evetech.net/"
 
 
 def _fmt_speaker(msg):
@@ -147,7 +148,7 @@ def waffle(*_):
 def faq(*_):
     """Return a link to the ESI issues FAQ."""
 
-    return "{}#faq".format(ESI_ISSUES)
+    return "{}docs/FAQ".format(ESI_DOCS)
 
 
 @command(trigger=("new", "bug", "br"))
