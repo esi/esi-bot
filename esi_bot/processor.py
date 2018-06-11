@@ -40,8 +40,8 @@ STARTUP_MSGS = (
 )
 
 REACTION_TRIGGERS = {
-    # re.compile(r"(^|.*( |!))crest( |$|\!|\?|\.)", re.IGNORECASE): "rip",
-    # re.compile(r"(^|.*( |!))xml(api)?( |$|\!|\?|\.)", re.IGNORECASE): "wreck",
+    re.compile(r"(^|.*( |!))crest( |$|\!|\?|\.)", re.IGNORECASE): "rip",
+    re.compile(r"(^|.*( |!))xml(api)?( |$|\!|\?|\.)", re.IGNORECASE): "wreck",
 }
 
 
