@@ -254,20 +254,20 @@ def version(*_):
 
 
 @command(trigger=("tq", "tranquility"))
-def tq_status(*_):
+def tq(*_):  # pylint: disable=invalid-name
     """Display current status of Tranquility, the main game server."""
 
-    tq = do_request("{}/dev/status/".format(ESI))[1]
+    tq_ = do_request("{}/dev/status/".format(ESI))[1]
     return "Tranquility status: ```{}```".format(
-        json.dumps(tq, sort_keys=True, indent=4)
+        json.dumps(tq_, sort_keys=True, indent=4)
     )
 
 
 @command(trigger=("sisi", "singularity"))
-def sisi_status(*_):
+def sisi(*_):
     """Display current status of Singularity, the main test server."""
 
-    sisi = do_request("{}/dev/status/?datasource=singularity".format(ESI))[1]
+    sisi_ = do_request("{}/dev/status/?datasource=singularity".format(ESI))[1]
     return "Singularity status: ```{}```".format(
-        json.dumps(sisi, sort_keys=True, indent=4)
+        json.dumps(sisi_, sort_keys=True, indent=4)
     )
