@@ -7,6 +7,7 @@ import random
 from datetime import datetime
 
 from esi_bot import LOG
+from esi_bot import REPLY
 from esi_bot import MESSAGE
 from esi_bot import COMMANDS
 from esi_bot.users import Users
@@ -76,6 +77,55 @@ class Processor(object):
             icon_emoji=":techco:",
         )
 
+    def _send_snippet(self, content, name, filetype, comment=None, title=None,
+                      channel=None):
+        """Sends a snippet to the channel, or the primary channel."""
+
+        # There is a 1 megabyte file size limit for files uploaded as snippets.
+        megb = 1024 ** 2
+        if len(content) > megb:
+            snipped = "<snipped>"
+            content = "{}{}".format(content[:megb - len(snipped)], snipped)
+
+        self._slack.api_call(
+            "files.upload",
+            content=content,
+            filename=name,
+            filetype=filetype,
+            initial_comment=comment,
+            title=title,
+            editable=False,  # doesn't actually work
+            username="ESI (bot)",  # same, but maybe someday
+            channels=channel or self._channels.primary,
+        )
+
+    def _process_reply(self, reply, event):
+        """Process replies using the Reply namedtuple."""
+
+        if len(reply.content) > 2900:
+            self._send_snippet(
+                reply.content,
+                reply.filename,
+                reply.filetype,
+                comment=reply.comment,
+                title=reply.title,
+                channel=event["channel"],
+            )
+        else:
+            self._send_msg(
+                "{}\n{}\n```{}```".format(
+                    reply.title,
+                    reply.comment,
+                    reply.content,
+                ),
+                channel=event["channel"],
+            )
+
+    def _process_str_reply(self, reply, event):
+        """Process replies returning strings."""
+
+        self._send_msg(_clean_multiline_text(reply), channel=event["channel"])
+
     def process_event(self, event):
         """Receive and process any/all Slack RTM API events."""
 
@@ -107,10 +157,10 @@ class Processor(object):
                 reply = _process_msg(MESSAGE(event["user"], command, args))
 
                 if reply:
-                    self._send_msg(
-                        _clean_multiline_text(reply),
-                        channel=event["channel"],
-                    )
+                    if isinstance(reply, REPLY):
+                        self._process_reply(reply, event)
+                    else:
+                        self._process_str_reply(reply, event)
             else:
                 for trigger, reaction in REACTION_TRIGGERS.items():
                     if re.match(trigger, event["text"]):

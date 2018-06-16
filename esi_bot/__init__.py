@@ -21,6 +21,8 @@ LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.INFO)
 
 ESI = "https://esi.evetech.net"
+REPLY = namedtuple("Reply", ("content", "filename", "filetype", "comment",
+                             "title"))
 MESSAGE = namedtuple("Message", ("speaker", "command", "args"))
 COMMANDS = {}  # trigger: function
 EXTENDED_HELP = {}  # name: docstring

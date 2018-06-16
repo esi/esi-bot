@@ -5,8 +5,10 @@ import re
 import json
 import time
 import html
+import http
 
 from esi_bot import ESI
+from esi_bot import REPLY
 from esi_bot import command
 from esi_bot import do_request
 
@@ -48,11 +50,21 @@ def request(match, *_):
             params,
         )
         status, res = do_request(url)
-        return "{}\n{}\n```{}```".format(
-            url,
-            status,
-            json.dumps(res, sort_keys=True, indent=4)
+        try:
+            status = http.HTTPStatus(status)
+        except ValueError:
+            pass
+        else:
+            status = "{} {}".format(status.value, status.name)
+
+        return REPLY(
+            content=json.dumps(res, sort_keys=True, indent=4),
+            filename="response.json",
+            filetype="json",
+            comment=status,
+            title=url,
         )
+
     return "failed to find GET {} in the {} ESI spec".format(path, version)
 
 
