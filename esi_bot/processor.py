@@ -77,23 +77,24 @@ class Processor(object):
             icon_emoji=":techco:",
         )
 
-    def _send_snippet(self, content, name, filetype, comment=None, title=None,
-                      channel=None):
+    def _send_snippet(self, reply, channel=None):
         """Sends a snippet to the channel, or the primary channel."""
 
         # There is a 1 megabyte file size limit for files uploaded as snippets.
         megb = 1024 ** 2
-        if len(content) > megb:
-            snipped = "<snipped>"
-            content = "{}{}".format(content[:megb - len(snipped)], snipped)
+        if len(reply.content) > megb:
+            snip = "<snipped>"
+            content = "{}{}".format(reply.content[:megb - len(snip)], snip)
+        else:
+            content = reply.content
 
         self._slack.api_call(
             "files.upload",
             content=content,
-            filename=name,
-            filetype=filetype,
-            initial_comment=comment,
-            title=title,
+            filename=reply.filename,
+            filetype=reply.filetype,
+            initial_comment=reply.comment,
+            title=reply.title,
             editable=False,  # doesn't actually work
             username="ESI (bot)",  # same, but maybe someday
             channels=channel or self._channels.primary,
@@ -103,14 +104,7 @@ class Processor(object):
         """Process replies using the Reply namedtuple."""
 
         if len(reply.content) > 2900:
-            self._send_snippet(
-                reply.content,
-                reply.filename,
-                reply.filetype,
-                comment=reply.comment,
-                title=reply.title,
-                channel=event["channel"],
-            )
+            self._send_snippet(reply, channel=event["channel"])
         else:
             self._send_msg(
                 "{}\n{}\n```{}```".format(

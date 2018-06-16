@@ -51,7 +51,7 @@ def request(match, *_):
         )
         status, res = do_request(url)
         try:
-            status = http.HTTPStatus(status)
+            status = http.HTTPStatus(status)  # pylint: disable=E1120
         except ValueError:
             pass
         else:
