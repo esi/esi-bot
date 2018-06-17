@@ -19,3 +19,15 @@ def paginated_id_to_names(slack, method, key, **kwargs):
             break
 
     return mapping
+
+
+def slack_escape_text(text):
+    """
+    Escape special characters used for link markup in Slack:
+    https://api.slack.com/docs/message-formatting#how_to_escape_characters
+    """
+
+    return (str(text)
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;"))
