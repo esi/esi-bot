@@ -62,6 +62,9 @@ def command(func=None, **kwargs):
 
     COMMANDS[kwargs.get("trigger", func.__name__)] = func
     EXTENDED_HELP[func.__name__] = func.__doc__
+    if isinstance(kwargs.get("trigger"), (list, tuple)):
+        for trigger in kwargs.get("trigger"):
+            EXTENDED_HELP[trigger] = func.__doc__
     return None
 
 
