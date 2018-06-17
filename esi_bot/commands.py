@@ -40,7 +40,10 @@ def get_help(msg):
         if isinstance(targets, (list, tuple)):
             commands.append(", ".join(targets))
         elif isinstance(targets, re._pattern_type):
-            commands.append(targets.pattern)
+            commands.append("{}: {}".format(
+                COMMANDS[targets].__name__,
+                targets.pattern
+            ))
         else:
             commands.append(targets)
 
