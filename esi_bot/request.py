@@ -49,6 +49,7 @@ def request(match, *_):
             "?" * int(params != ""),
             params,
         )
+        start = time.time()
         status, res = do_request(url)
         try:
             status = http.HTTPStatus(status)  # pylint: disable=E1120
@@ -61,7 +62,10 @@ def request(match, *_):
             content=json.dumps(res, sort_keys=True, indent=4),
             filename="response.json",
             filetype="json",
-            comment=status,
+            comment="{} ({:,.0f}ms)".format(
+                status,
+                (time.time() - start) * 1000,
+            ),
             title=url,
         )
 
