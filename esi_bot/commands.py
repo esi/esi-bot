@@ -4,9 +4,9 @@
 import re
 import time
 import json
-from collections import Counter
 
 from esi_bot import ESI
+from esi_bot import REPLY_MESSAGE
 from esi_bot import command
 from esi_bot import COMMANDS
 from esi_bot import do_request
@@ -87,18 +87,13 @@ def _status_str(statuses):
     """Generate a string to describe the route statuses."""
 
     if statuses:
-        if len(statuses) < 9:
-            lines = ["{} {}".format(
-                route["method"].upper(),
-                route["route"]
-            ) for route in statuses]
-        else:
-            # Assuming that all ESI routes only have a single tag.
-            counter = Counter([route["tags"][0] for route in statuses])
-            lines = ["{} in {}".format(
-                count,
-                tag
-            ) for tag, count in counter.items()]
+        statuses.sort(key=lambda x: x["method"])
+        statuses.sort(key=lambda x: x["route"])
+        method_pad = max([len(route["method"]) for route in statuses])
+        lines = ["{} {}".format(
+            route["method"].upper().ljust(method_pad),
+            route["route"]
+        ) for route in statuses]
         return "```{}```".format("\n".join(lines))
     else:
         return ""
@@ -123,26 +118,40 @@ def status(*_):
 
     slow_route_count = len(red_routes) + len(yellow_routes)
     slow_route_ratio = slow_route_count / len(STATUS["status"])
-    if slow_route_ratio > 0.3:
-        return ":fire:" * round(slow_route_ratio * 10)
 
-    status_messages = []
+    if yellow_routes and not red_routes:
+        message = ":fire_engine:" * (round(slow_route_ratio * 10) or 1)
+    elif red_routes:
+        message = ":fire:" * (round(slow_route_ratio * 10) or 1)
+    else:
+        message = ":ok_hand:"
+
+    attachments = []
     if red_routes:
-        status_messages.append(
-            ":fire: {} red :fire: {}".format(
+        attachments.append({
+            "color": "danger",
+            "fallback": "{} red".format(len(red_routes)),
+            "text": ":fire: {} red :fire: {}".format(
                 len(red_routes),
-                _status_str(red_routes),
+                _status_str(red_routes)
             )
-        )
+        })
     if yellow_routes:
-        status_messages.append(
-            ":fire_engine: {} yellow :fire_engine: {}".format(
+        attachments.append({
+            "color": "warning",
+            "fallback": "{} yellow".format(len(yellow_routes)),
+            "text": ":fire_engine: {} yellow :fire_engine: {}".format(
                 len(yellow_routes),
-                _status_str(yellow_routes),
+                _status_str(yellow_routes)
             )
-        )
+        })
+    if not slow_route_count:
+        attachments.append({
+            "color": "good",
+            "text": "ESI is fully armed and operational!"
+        })
 
-    return "\n".join(status_messages) if status_messages else ":ok_hand:"
+    return REPLY_MESSAGE(content=message, attachments=attachments)
 
 
 @command(trigger=("id", "ids", "ranges"))
