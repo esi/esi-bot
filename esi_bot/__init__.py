@@ -19,6 +19,10 @@ from requests.adapters import HTTPAdapter
 
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s:%(name)s:%(levelname)s: %(message)s",
+)
 
 ESI = "https://esi.evetech.net"
 REPLY = namedtuple("Reply", ("content", "filename", "filetype", "comment",
