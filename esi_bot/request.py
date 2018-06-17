@@ -8,7 +8,7 @@ import html
 import http
 
 from esi_bot import ESI
-from esi_bot import REPLY
+from esi_bot import REPLY_SNIPPET
 from esi_bot import command
 from esi_bot import do_request
 
@@ -58,7 +58,7 @@ def request(match, *_):
         else:
             status = "{} {}".format(status.value, status.name)
 
-        return REPLY(
+        return REPLY_SNIPPET(
             content=json.dumps(res, sort_keys=True, indent=4),
             filename="response.json",
             filetype="json",

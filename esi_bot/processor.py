@@ -7,7 +7,8 @@ import random
 from datetime import datetime
 
 from esi_bot import LOG
-from esi_bot import REPLY
+from esi_bot import REPLY_SNIPPET
+from esi_bot import REPLY_MESSAGE
 from esi_bot import MESSAGE
 from esi_bot import COMMANDS
 from esi_bot.users import Users
@@ -66,13 +67,14 @@ class Processor(object):
             self._send_msg(random.choice(STARTUP_MSGS))
         return joined
 
-    def _send_msg(self, msg, channel=None):
+    def _send_msg(self, msg, attachments=None, channel=None):
         """Sends a message to the channel, or the primary channel."""
 
         self._slack.api_call(
             "chat.postMessage",
             channel=channel or self._channels.primary,
             text=msg,
+            attachments=attachments,
             username="ESI (bot)",
             icon_emoji=":techco:",
         )
@@ -100,8 +102,8 @@ class Processor(object):
             channels=channel or self._channels.primary,
         )
 
-    def _process_reply(self, reply, event):
-        """Process replies using the Reply namedtuple."""
+    def _process_snippet_reply(self, reply, event):
+        """Process code snippet replies."""
 
         if len(reply.content) > 2900:
             self._send_snippet(reply, channel=event["channel"])
@@ -115,10 +117,19 @@ class Processor(object):
                 channel=event["channel"],
             )
 
+    def _process_message_reply(self, reply, event):
+        """Process text message replies."""
+
+        self._send_msg(
+            reply.content,
+            attachments=reply.attachments,
+            channel=event["channel"]
+        )
+
     def _process_str_reply(self, reply, event):
         """Process replies returning strings."""
 
-        self._send_msg(_clean_multiline_text(reply), channel=event["channel"])
+        self._send_msg(reply, channel=event["channel"])
 
     def process_event(self, event):
         """Receive and process any/all Slack RTM API events."""
@@ -151,8 +162,10 @@ class Processor(object):
                 reply = _process_msg(MESSAGE(event["user"], command, args))
 
                 if reply:
-                    if isinstance(reply, REPLY):
-                        self._process_reply(reply, event)
+                    if isinstance(reply, REPLY_SNIPPET):
+                        self._process_snippet_reply(reply, event)
+                    elif isinstance(reply, REPLY_MESSAGE):
+                        self._process_message_reply(reply, event)
                     else:
                         self._process_str_reply(reply, event)
             else:

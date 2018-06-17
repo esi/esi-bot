@@ -25,8 +25,9 @@ logging.basicConfig(
 )
 
 ESI = "https://esi.evetech.net"
-REPLY = namedtuple("Reply", ("content", "filename", "filetype", "comment",
-                             "title"))
+REPLY_SNIPPET = namedtuple("ReplySnippet",
+                           ("content", "filename", "filetype", "comment", "title"))
+REPLY_MESSAGE = namedtuple("ReplyMessage", ("content", "attachments"))
 MESSAGE = namedtuple("Message", ("speaker", "command", "args"))
 COMMANDS = {}  # trigger: function
 EXTENDED_HELP = {}  # name: docstring
