@@ -30,7 +30,7 @@ def get_help(msg):
     """Return help on an available command, or list all commands."""
 
     if msg.args and msg.args[0] in EXTENDED_HELP:
-        return "ESI-bot help for {}:\n```{}```".format(
+        return "ESI-bot help for {}:\n>>>{}".format(
             msg.args[0],
             EXTENDED_HELP[msg.args[0]],
         )
