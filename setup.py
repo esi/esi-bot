@@ -16,8 +16,8 @@ setup(
     packages=find_packages(),
     author="Adam Talsma",
     author_email="adam@talsma.ca",
-    url="https://github.com/ccpgames/esi-bot/",
-    download_url="https://github.com/ccpgames/esi-bot/",
+    url="https://github.com/esi/esi-bot/",
+    download_url="https://github.com/esi/esi-bot/",
     install_requires=[
         "requests >= 2.18.4",
         "slackclient >= 1.2.1",
