@@ -265,21 +265,80 @@ def version(*_):
     return "ESI-bot version {}".format(__version__)
 
 
+def server_status(datasource):
+    """Generate """
+
+    if datasource not in ("tranquility", "singularity"):
+        return "Cannot request server status for `{}`".format(datasource)
+
+    status, response = do_request("{}/v1/status/?datasource={}".format(
+        ESI,
+        datasource
+    ))
+    server_name = datasource.capitalize()
+
+    if status == 200:
+        player_count = "{:,}".format(response["players"]).replace(",", " ")
+        startup_time = response["start_time"][:16].replace("T", " ")
+        attachment = {
+            "color": "good",
+            "title": "{} status".format(server_name),
+            "fields": [
+                {
+                    "title": "Players online",
+                    "value": player_count,
+                    "short": True
+                },
+                {
+                    "title": "Server started",
+                    "value": startup_time,
+                    "short": True
+                },
+            ],
+            "fallback": "{} status: {} online, started at {}".format(
+                server_name,
+                player_count,
+                startup_time
+            )
+        }
+        if "vip" in response and response["vip"]:
+            attachment["color"] = "warning"
+            attachment["fields"].append({"title": "In VIP mode"})
+            attachment["fallback"] += ", in VIP mode"
+    elif status == 503:
+        attachment = {
+            "color": "danger",
+            "title": "{} status".format(server_name),
+            "text": "Offline",
+            "fallback": "{} status: Offline".format(server_name)
+        }
+    else:
+        indeterminate = (
+            "Cannot determine server status. "
+            "It might be offline, or experiencing connectivity issues."
+        )
+        attachment = {
+            "color": "danger",
+            "title": "{} status".format(server_name),
+            "text": indeterminate,
+            "fallback": "{} status: {}".format(
+                server_name,
+                indeterminate
+            )
+        }
+
+    return REPLY_MESSAGE(content=None, attachments=[attachment])
+
+
 @command(trigger=("tq", "tranquility"))
 def tq(*_):  # pylint: disable=invalid-name
     """Display current status of Tranquility, the main game server."""
 
-    tq_ = do_request("{}/dev/status/".format(ESI))[1]
-    return "Tranquility status: ```{}```".format(
-        json.dumps(tq_, sort_keys=True, indent=4)
-    )
+    return server_status("tranquility")
 
 
 @command(trigger=("sisi", "singularity"))
 def sisi(*_):
     """Display current status of Singularity, the main test server."""
 
-    sisi_ = do_request("{}/dev/status/?datasource=singularity".format(ESI))[1]
-    return "Singularity status: ```{}```".format(
-        json.dumps(sisi_, sort_keys=True, indent=4)
-    )
+    return server_status("singularity")
