@@ -41,7 +41,7 @@ def get_help(msg):
         elif isinstance(targets, re._pattern_type):
             commands.append("{}: {}".format(
                 COMMANDS[targets].__name__,
-                targets.pattern
+                targets.pattern,
             ))
         else:
             commands.append(targets)
@@ -86,7 +86,7 @@ def _status_str(statuses):
     """Generate a string to describe the route statuses."""
 
     if statuses:
-        statuses.sort(key=lambda x: (x["method"], x["route"]))
+        statuses.sort(key=lambda x: (x["route"], x["method"]))
         method_pad = max([len(route["method"]) for route in statuses])
         lines = ["{} {}".format(
             route["method"].upper().ljust(method_pad),
@@ -143,7 +143,7 @@ def status(*_):
     if not red_routes and not yellow_routes:
         attachments.append({
             "color": "good",
-            "text": "ESI is fully armed and operational!"
+            "text": "ESI is fully armed and operational!",
         })
 
     return REPLY(content=None, attachments=attachments)
@@ -268,7 +268,7 @@ def server_status(datasource):
 
     status_code, response = do_request("{}/v1/status/?datasource={}".format(
         ESI,
-        datasource
+        datasource,
     ))
     server_name = datasource.capitalize()
 
@@ -294,7 +294,7 @@ def server_status(datasource):
                 response["players"],
                 response["start_time"],
                 ", in VIP" * int(vip is True),
-            )
+            ),
         }
         if vip:
             attachment["fields"].append({"title": "In VIP mode"})
