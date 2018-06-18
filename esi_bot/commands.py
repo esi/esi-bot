@@ -86,12 +86,11 @@ def _status_str(statuses):
     """Generate a string to describe the route statuses."""
 
     if statuses:
-        statuses.sort(key=lambda x: x["method"])
-        statuses.sort(key=lambda x: x["route"])
+        statuses.sort(key=lambda x: (x["method"], x["route"]))
         method_pad = max([len(route["method"]) for route in statuses])
         lines = ["{} {}".format(
             route["method"].upper().ljust(method_pad),
-            route["route"]
+            route["route"],
         ) for route in statuses]
         return "```{}```".format("\n".join(lines))
     return ""
@@ -119,18 +118,26 @@ def status(*_):
         attachments.append({
             "color": "danger",
             "fallback": "{} red".format(len(red_routes)),
-            "text": ":fire: {} red :fire: {}".format(
-                len(red_routes),
-                _status_str(red_routes)
+            "text": "{emoji} {count} red {emoji} {details}".format(
+                emoji=":fire:" * int(max(
+                    round(len(red_routes) / len(STATUS["status"]) * 10),
+                    1,
+                )),
+                count=len(red_routes),
+                details=_status_str(red_routes),
             )
         })
     if yellow_routes:
         attachments.append({
             "color": "warning",
             "fallback": "{} yellow".format(len(yellow_routes)),
-            "text": ":fire_engine: {} yellow :fire_engine: {}".format(
-                len(yellow_routes),
-                _status_str(yellow_routes)
+            "text": "{emoji} {count} yellow {emoji} {details}".format(
+                emoji=":fire_engine:" * int(max(
+                    round(len(yellow_routes) / len(STATUS["status"]) * 10),
+                    1,
+                )),
+                count=len(yellow_routes),
+                details=_status_str(yellow_routes),
             )
         })
     if not red_routes and not yellow_routes:
