@@ -7,8 +7,8 @@ import random
 from datetime import datetime
 
 from esi_bot import LOG
-from esi_bot import REPLY_SNIPPET
-from esi_bot import REPLY_MESSAGE
+from esi_bot import REPLY
+from esi_bot import SNIPPET
 from esi_bot import MESSAGE
 from esi_bot import COMMANDS
 from esi_bot.users import Users
@@ -123,7 +123,7 @@ class Processor(object):
         self._send_msg(
             reply.content,
             attachments=reply.attachments,
-            channel=event["channel"]
+            channel=event["channel"],
         )
 
     def _process_str_reply(self, reply, event):
@@ -162,9 +162,9 @@ class Processor(object):
                 reply = _process_msg(MESSAGE(event["user"], command, args))
 
                 if reply:
-                    if isinstance(reply, REPLY_SNIPPET):
+                    if isinstance(reply, SNIPPET):
                         self._process_snippet_reply(reply, event)
-                    elif isinstance(reply, REPLY_MESSAGE):
+                    elif isinstance(reply, REPLY):
                         self._process_message_reply(reply, event)
                     else:
                         self._process_str_reply(reply, event)
@@ -195,16 +195,3 @@ def _process_msg(msg):
 
     # unknown command
     return COMMANDS["help"](msg)
-
-
-def _clean_multiline_text(text):
-    """Cleans multiline text, if it's longer than slack's limit."""
-
-    content = text[:2900]
-    if content != text:
-        content = "{}\n<content snipped>".format(content)
-
-    if content.count("```") % 2 != 0:
-        content = "{}\n```".format(content)
-
-    return content

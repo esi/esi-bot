@@ -3,10 +3,9 @@
 
 import re
 import time
-import json
 
 from esi_bot import ESI
-from esi_bot import REPLY_MESSAGE
+from esi_bot import REPLY
 from esi_bot import command
 from esi_bot import COMMANDS
 from esi_bot import do_request
@@ -95,8 +94,7 @@ def _status_str(statuses):
             route["route"]
         ) for route in statuses]
         return "```{}```".format("\n".join(lines))
-    else:
-        return ""
+    return ""
 
 
 @command
@@ -115,16 +113,6 @@ def status(*_):
                   route["status"] == "red"]
     yellow_routes = [route for route in STATUS["status"] if
                      route["status"] == "yellow"]
-
-    slow_route_count = len(red_routes) + len(yellow_routes)
-    slow_route_ratio = slow_route_count / len(STATUS["status"])
-
-    if yellow_routes and not red_routes:
-        message = ":fire_engine:" * (round(slow_route_ratio * 10) or 1)
-    elif red_routes:
-        message = ":fire:" * (round(slow_route_ratio * 10) or 1)
-    else:
-        message = ":ok_hand:"
 
     attachments = []
     if red_routes:
@@ -145,13 +133,13 @@ def status(*_):
                 _status_str(yellow_routes)
             )
         })
-    if not slow_route_count:
+    if not red_routes and not yellow_routes:
         attachments.append({
             "color": "good",
             "text": "ESI is fully armed and operational!"
         })
 
-    return REPLY_MESSAGE(content=message, attachments=attachments)
+    return REPLY(content=None, attachments=attachments)
 
 
 @command(trigger=("id", "ids", "ranges"))
@@ -271,46 +259,45 @@ def server_status(datasource):
     if datasource not in ("tranquility", "singularity"):
         return "Cannot request server status for `{}`".format(datasource)
 
-    status, response = do_request("{}/v1/status/?datasource={}".format(
+    status_code, response = do_request("{}/v1/status/?datasource={}".format(
         ESI,
         datasource
     ))
     server_name = datasource.capitalize()
 
-    if status == 200:
-        player_count = "{:,}".format(response["players"]).replace(",", " ")
-        startup_time = response["start_time"][:16].replace("T", " ")
+    if status_code == 200:
+        vip = response.get("vip")
         attachment = {
-            "color": "good",
+            "color": "warning" if vip else "good",
             "title": "{} status".format(server_name),
             "fields": [
                 {
                     "title": "Players online",
-                    "value": player_count,
-                    "short": True
+                    "value": "{:,}".format(response["players"]),
+                    "short": True,
                 },
                 {
                     "title": "Server started",
-                    "value": startup_time,
-                    "short": True
+                    "value": response["start_time"],
+                    "short": True,
                 },
             ],
-            "fallback": "{} status: {} online, started at {}".format(
+            "fallback": "{} status: {:,} online, started at {}{}".format(
                 server_name,
-                player_count,
-                startup_time
+                response["players"],
+                response["start_time"],
+                ", in VIP" * int(vip is True),
             )
         }
-        if "vip" in response and response["vip"]:
-            attachment["color"] = "warning"
+        if vip:
             attachment["fields"].append({"title": "In VIP mode"})
-            attachment["fallback"] += ", in VIP mode"
+
     elif status == 503:
         attachment = {
             "color": "danger",
             "title": "{} status".format(server_name),
             "text": "Offline",
-            "fallback": "{} status: Offline".format(server_name)
+            "fallback": "{} status: Offline".format(server_name),
         }
     else:
         indeterminate = (
@@ -321,13 +308,10 @@ def server_status(datasource):
             "color": "danger",
             "title": "{} status".format(server_name),
             "text": indeterminate,
-            "fallback": "{} status: {}".format(
-                server_name,
-                indeterminate
-            )
+            "fallback": "{} status: {}".format(server_name, indeterminate),
         }
 
-    return REPLY_MESSAGE(content=None, attachments=[attachment])
+    return REPLY(content=None, attachments=[attachment])
 
 
 @command(trigger=("tq", "tranquility"))
