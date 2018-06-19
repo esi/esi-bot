@@ -5,16 +5,13 @@
 from gevent import monkey
 monkey.patch_all()
 
-import re
-import os
-import logging
-import pkg_resources
-from functools import wraps
-from functools import partial
-from collections import namedtuple
+import logging  # noqa E402
+import pkg_resources  # noqa E402
+from functools import partial  # noqa E402
+from collections import namedtuple  # noqa E402
 
-import requests
-from requests.adapters import HTTPAdapter
+import requests  # noqa E402
+from requests.adapters import HTTPAdapter  # noqa E402
 
 
 LOG = logging.getLogger(__name__)

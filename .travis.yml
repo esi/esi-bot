@@ -1,0 +1,13 @@
+language: python
+python:
+  - "3.6"
+env:
+  - TOXENV=python3.6
+  - TOXENV=pylint
+  - TOXENV=flake8
+before_install:
+  - pip install -U coveralls pytest pytest-cov setuphelpers tox
+script:
+  - tox
+after_success:
+  - coveralls

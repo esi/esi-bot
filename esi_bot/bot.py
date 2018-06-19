@@ -8,7 +8,7 @@ from slackclient import SlackClient
 
 from esi_bot import LOG
 from esi_bot import request
-from esi_bot import commands  # pylint: disable=unused-import
+from esi_bot import commands  # noqa F401  # pylint: disable=unused-import
 from esi_bot.processor import Processor
 
 

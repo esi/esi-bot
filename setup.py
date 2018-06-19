@@ -5,6 +5,7 @@ import os
 from setuptools import setup
 from setuptools import find_packages
 from setuphelpers import git_version
+from setuphelpers import test_command
 from setuphelpers import long_description
 
 
@@ -14,6 +15,7 @@ setup(
     description="ESI slack bot",
     long_description=long_description(),
     packages=find_packages(),
+    cmdclass=test_command(cover="esi_bot"),
     author="Adam Talsma",
     author_email="adam@talsma.ca",
     url="https://github.com/esi/esi-bot/",

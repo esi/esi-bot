@@ -48,8 +48,9 @@ def get_help(msg):
 
     return "{}The following commands are enabled: {}".format(
         # don't echo unknown commands and start a bot fight
-        "I'm sorry{}, that's an unknown command. ".format(_fmt_speaker(msg))
-        * int(msg.command != "help"),
+        "I'm sorry{}, that's an unknown command. ".format(
+            _fmt_speaker(msg)
+        ) * int(msg.command != "help"),
         " ".join("`{}`".format(x) for x in commands),
     )
 
