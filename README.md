@@ -2,6 +2,9 @@
 
 Connects to slack via RTM API, does stuff there. Important stuff.
 
+[![Build
+Status](https://travis-ci.org/esi/esi-bot.svg?branch=master)](https://travis-ci.org/esi/esi-bot)
+
 
 ## Config
 
