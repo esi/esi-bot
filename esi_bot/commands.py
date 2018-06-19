@@ -144,7 +144,7 @@ def status(*_):
     if not red_routes and not yellow_routes:
         attachments.append({
             "color": "good",
-            "text": "ESI is fully armed and operational!",
+            "text": ":ok_hand:",
         })
 
     return REPLY(content=None, attachments=attachments)
