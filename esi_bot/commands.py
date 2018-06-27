@@ -152,12 +152,12 @@ def status(*_):
 
 @command(trigger=("id", "ids", "ranges"))
 def ids(*_):
-    """Return a link to the ID ranges gist."""
+    """Return a link to the ID ranges gist and asset location IDs doc."""
 
     return (
         "https://gist.github.com/a-tal/5ff5199fdbeb745b77cb633b7f4400bb\n"
         "assets: "
-        "https://forums.eveonline.com/t/asset-location-id-quick-reference/"
+        "https://docs.esi.evetech.net/docs/asset_location_id"
     )
 
 
