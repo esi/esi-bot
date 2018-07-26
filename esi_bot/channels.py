@@ -39,14 +39,14 @@ class Channels(object):
         """Attempts to join the permitted channels.
 
         Returns:
-            boolean of any channel succesfully joined
+            boolean of any channel successfully joined
         """
 
         for ch_id, ch_name in self._channels.items():
             if ch_name in self._allowed:
                 join = self._slack.api_call("channels.join", channel=ch_id)
                 if join["ok"]:
-                    if self.primary is None:
+                    if self._allowed.index(ch_name) == 0:
                         self.primary = ch_id
                     self._joined[ch_id] = ch_name
                 else:
