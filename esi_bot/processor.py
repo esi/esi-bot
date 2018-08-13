@@ -84,7 +84,7 @@ class Processor(object):
         return joined
 
     def _send_msg(self, msg, attachments=None, unfurling=False, channel=None):
-        """Sends a message to the channel, or the primary channel."""
+        """Send a message to the channel, or the primary channel."""
 
         self._slack.api_call(
             "chat.postMessage",
@@ -98,7 +98,7 @@ class Processor(object):
         )
 
     def _send_ephemeral(self, msg, user, channel, attachments=None):
-        """Sends an ephemeral message."""
+        """Send an ephemeral message."""
 
         self._slack.api_call(
             "chat.postEphemeral",
@@ -110,7 +110,7 @@ class Processor(object):
         )
 
     def _send_snippet(self, reply, channel=None):
-        """Sends a snippet to the channel, or the primary channel."""
+        """Send a snippet to the channel, or the primary channel."""
 
         # There is a 1 megabyte file size limit for files uploaded as snippets.
         megb = 1024 ** 2
@@ -181,9 +181,9 @@ class Processor(object):
                     event["text"],
                 )
             elif "message" in event and \
-                    event.get("subtype") == "message_changed" and (
-                            float(event["message"]["edited"]["ts"]) -
-                            float(event["message"]["ts"]) < self._edit_window):
+                    event.get("subtype") == "message_changed" and \
+                    float(event["message"]["edited"]["ts"]) - \
+                    float(event["message"]["ts"]) < self._edit_window:
                 self._process_once(
                     event["message"]["client_msg_id"],
                     float(event["message"]["ts"]),

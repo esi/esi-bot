@@ -36,7 +36,7 @@ __version__ = pkg_resources.get_distribution("esi-bot").version
 
 
 def _build_session():
-    """Builds a requests session with a pool and retries."""
+    """Build a requests session with a pool and retries."""
 
     ses = requests.Session()
     ses.headers["User-Agent"] = "esi-bot/{}".format(__version__)

@@ -11,6 +11,8 @@ class Channels(object):
     """Join and store channel IDs -> names."""
 
     def __init__(self, slack):
+        """Create a new Channels caching object."""
+
         self._slack = slack
         self._channels = {}  # {id: name}
         self._last_sync = 0
@@ -20,7 +22,7 @@ class Channels(object):
         self.update_names()
 
     def update_names(self):
-        """Updates our names cache once per minute at max."""
+        """Update our names cache once per minute at max."""
 
         if time.time() - self._last_sync < 60:
             return
@@ -36,7 +38,7 @@ class Channels(object):
             self._channels = channels
 
     def enter_channels(self):
-        """Attempts to join the permitted channels.
+        """Attempt to join the permitted channels.
 
         Returns:
             boolean of any channel successfully joined
@@ -55,6 +57,6 @@ class Channels(object):
         return self.primary is not None
 
     def get_name(self, channel_id):
-        """Returns the channel name if we're in it."""
+        """Return the channel name if we're in it."""
 
         return self._joined.get(channel_id)

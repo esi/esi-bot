@@ -110,7 +110,7 @@ def _status_str(statuses):
 
 @command
 def status(*_):
-    """Generic ESI status."""
+    """Return the current ESI health/status."""
 
     now = time.time()
     if now - STATUS["timestamp"] > 60:
@@ -124,7 +124,6 @@ def status(*_):
     categories = [
         ("red", ":fire:", "danger"),
         ("yellow", ":fire_engine:", "warning"),
-        # ("green", ":ok_hand:", "good"),
     ]
 
     for status_color, emoji, color_value in categories:
