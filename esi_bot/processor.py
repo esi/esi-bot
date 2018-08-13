@@ -48,6 +48,8 @@ REACTION_TRIGGERS = {
     re.compile(r"(^|.*( |!))xml(api)?( |$|\!|\?|\.)", re.IGNORECASE): "wreck",
 }
 
+UNMATCHED = object()
+
 
 class Processor(object):
     """Execute ESI-bot commands based on incoming messages."""
@@ -254,7 +256,7 @@ class Processor(object):
                     self._process_str_reply(reply, channel)
                 # since unknown commands show up as help this lets people
                 # edit to a known command and have it processed once still
-                return command != "help"
+                return command != UNMATCHED
         else:
             reacted = False
             for trigger, reaction in REACTION_TRIGGERS.items():
@@ -286,4 +288,4 @@ def _process_msg(msg):
             return msg.command, func(msg)
 
     # unknown command
-    return "help", COMMANDS["help"](msg)
+    return UNMATCHED, COMMANDS["help"](msg)
