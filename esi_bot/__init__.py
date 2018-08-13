@@ -5,6 +5,7 @@
 from gevent import monkey
 monkey.patch_all()
 
+import os  # noqa E402
 import logging  # noqa E402
 import pkg_resources  # noqa E402
 from functools import partial  # noqa E402
@@ -15,7 +16,7 @@ from requests.adapters import HTTPAdapter  # noqa E402
 
 
 LOG = logging.getLogger(__name__)
-LOG.setLevel(logging.INFO)
+LOG.setLevel(getattr(logging, os.environ.get("ESI_BOT_LOG_LEVEL", "INFO")))
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s:%(name)s:%(levelname)s: %(message)s",

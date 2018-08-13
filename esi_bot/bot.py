@@ -26,9 +26,17 @@ def main():
                 raise SystemExit("Could not join channels")
 
             LOG.info("Connected to Slack")
+            cycle = 0
             while slack.server.connected is True:
+                cycle += 1
+
                 for msg in slack.rtm_read():
                     processor.process_event(msg)
+
+                if cycle > 10:
+                    processor.garbage_collect()
+                    cycle = 0
+
                 time.sleep(1)  # rtm_read should block, but it doesn't :/
 
         else:

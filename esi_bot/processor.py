@@ -3,6 +3,7 @@
 
 import os
 import re
+import time
 import random
 from datetime import datetime
 
@@ -59,6 +60,20 @@ class Processor(object):
         self._channels = Channels(slack)
         self._prefix = os.environ.get("ESI_BOT_PREFIX", "!esi")
         self._greenlet = None
+        self._replied_to = {}  # {uuid: timestamp}
+        self._edit_window = int(os.environ.get("ESI_BOT_EDIT_WINDOW", 300))
+
+    def garbage_collect(self):
+        """Prune the self._replied_to dictionary."""
+
+        prune_time = time.time() - self._edit_window
+        prune_keys = []
+        for key, timestamp in self._replied_to.items():
+            if timestamp < prune_time:
+                prune_keys.append(key)
+
+        for key in prune_keys:
+            self._replied_to.pop(key)
 
     def on_server_connect(self):
         """Join channels, start the daily announcements."""
@@ -117,11 +132,11 @@ class Processor(object):
             channels=channel or self._channels.primary,
         )
 
-    def _process_snippet_reply(self, reply, event):
+    def _process_snippet_reply(self, reply, channel):
         """Process code snippet replies."""
 
         if len(reply.content) > 2900 or reply.content.count("\n") > 9:
-            self._send_snippet(reply, channel=event["channel"])
+            self._send_snippet(reply, channel=channel)
         else:
             self._send_msg(
                 "{}\n{}\n```{}```".format(
@@ -129,76 +144,131 @@ class Processor(object):
                     reply.comment,
                     reply.content,
                 ),
-                channel=event["channel"],
+                channel=channel,
             )
 
-    def _process_message_reply(self, reply, event):
+    def _process_message_reply(self, reply, channel):
         """Process text message replies."""
 
         self._send_msg(
             reply.content,
             attachments=reply.attachments,
-            channel=event["channel"],
+            channel=channel,
         )
 
-    def _process_ephemeral_reply(self, reply, event):
+    def _process_ephemeral_reply(self, reply, user, channel):
         """Process ephemeral replies."""
 
-        self._send_ephemeral(reply.content, event["user"], event["channel"])
+        self._send_ephemeral(reply.content, user, channel)
 
-    def _process_str_reply(self, reply, event):
+    def _process_str_reply(self, reply, channel):
         """Process replies returning strings."""
 
-        self._send_msg(reply, unfurling=True, channel=event["channel"])
+        self._send_msg(reply, unfurling=True, channel=channel)
 
     def process_event(self, event):
         """Receive and process any/all Slack RTM API events."""
 
         LOG.debug("RTM event received: %r", event)
 
-        if event["type"] == "message" and "user" in event:
-            channel_name = self._channels.get_name(event["channel"])
-            if not channel_name:
-                return
+        if event["type"] == "message":
+            if "user" in event and "client_msg_id" in event:
+                self._process_once(
+                    event["client_msg_id"],  # not present in self msgs
+                    float(event["ts"]),
+                    event["channel"],
+                    event["user"],
+                    event["text"],
+                )
+            elif "message" in event and \
+                    event.get("subtype") == "message_changed" and (
+                            float(event["message"]["edited"]["ts"]) -
+                            float(event["message"]["ts"]) < self._edit_window):
+                self._process_once(
+                    event["message"]["client_msg_id"],
+                    float(event["message"]["ts"]),
+                    event["channel"],
+                    event["message"]["edited"]["user"],
+                    event["message"]["text"],
+                )
 
-            user = self._users.get_name(event["user"])
-            LOG.info(
-                "[%s] @%s: %s",
-                datetime.utcfromtimestamp(int(float(event.get("ts", 0)))),
-                user,
-                event["text"],
-            )
+    def _process_once(self, msg_id, timestamp, *args):
+        """Process an event once.
 
-            # PEOPLE SHOULD BE FREE TO TYPE IN ALL CAPS
-            event["text"] = event["text"].lower()
+        Args:
+            msg_id: uuid for this event
+            *args: arguments for self._process_event
+        """
 
-            try:
-                prefix, command, *args = event["text"].split(" ")
-            except ValueError:
-                # one word message. if it's our prefix, show help
-                prefix, command, *args = event["text"], "help"
+        if msg_id in self._replied_to:
+            return
 
-            if prefix == self._prefix:
-                reply = _process_msg(MESSAGE(event["user"], command, args))
+        if self._process_event(timestamp, *args):  # pylint: disable=E1120
+            self._replied_to[msg_id] = timestamp
 
-                if reply:
-                    if isinstance(reply, SNIPPET):
-                        self._process_snippet_reply(reply, event)
-                    elif isinstance(reply, REPLY):
-                        self._process_message_reply(reply, event)
-                    elif isinstance(reply, EPHEMERAL):
-                        self._process_ephemeral_reply(reply, event)
-                    else:
-                        self._process_str_reply(reply, event)
-            else:
-                for trigger, reaction in REACTION_TRIGGERS.items():
-                    if re.match(trigger, event["text"]):
-                        self._slack.api_call(
-                            "reactions.add",
-                            name=reaction,
-                            channel=event["channel"],
-                            timestamp=event["ts"],
-                        )
+    def _process_event(self, timestamp, channel, user, text):
+        """Process valid events, look for our prefix or add a reaction.
+
+        Args:
+            timestamp: float, unix timestamp
+            channel: slack channel uuid
+            user: slack speaker uuid
+            text: string, raw event text
+
+        Returns:
+            boolean of if this event was replied to (and not the help cmd)
+        """
+
+        channel_name = self._channels.get_name(channel)
+        if not channel_name:
+            return False
+
+        user_name = self._users.get_name(user)
+        LOG.info(
+            "[%s] @%s: %s",
+            datetime.utcfromtimestamp(int(timestamp)),
+            user_name,
+            text,
+        )
+
+        # PEOPLE SHOULD BE FREE TO TYPE IN ALL CAPS
+        text = text.lower()
+
+        try:
+            prefix, command, *args = text.split(" ")
+        except ValueError:
+            # one word message. if it's our prefix, show help
+            prefix, command, *args = text, "help"
+
+        if prefix == self._prefix:
+            command, reply = _process_msg(MESSAGE(user, command, args))
+
+            if reply:
+                if isinstance(reply, SNIPPET):
+                    self._process_snippet_reply(reply, channel)
+                elif isinstance(reply, REPLY):
+                    self._process_message_reply(reply, channel)
+                elif isinstance(reply, EPHEMERAL):
+                    self._process_ephemeral_reply(reply, user, channel)
+                else:
+                    self._process_str_reply(reply, channel)
+                # since unknown commands show up as help this lets people
+                # edit to a known command and have it processed once still
+                return command != "help"
+        else:
+            reacted = False
+            for trigger, reaction in REACTION_TRIGGERS.items():
+                if re.match(trigger, text):
+                    reacted = True
+                    self._slack.api_call(
+                        "reactions.add",
+                        name=reaction,
+                        channel=channel,
+                        timestamp=timestamp,
+                    )
+            return reacted
+
+        return False
 
 
 def _process_msg(msg):
@@ -207,13 +277,13 @@ def _process_msg(msg):
     for triggers, func in COMMANDS.items():
         if isinstance(triggers, (list, tuple)):
             if msg.command in triggers:
-                return func(msg)
+                return msg.command, func(msg)
         elif isinstance(triggers, re._pattern_type):
             match = re.match(triggers, msg.command)
             if match:
-                return func(match, msg)
+                return msg.command, func(match, msg)
         elif msg.command == triggers:
-            return func(msg)
+            return msg.command, func(msg)
 
     # unknown command
-    return COMMANDS["help"](msg)
+    return "help", COMMANDS["help"](msg)
