@@ -8,6 +8,7 @@ from datetime import datetime
 
 from esi_bot import LOG
 from esi_bot import REPLY
+from esi_bot import EPHEMERAL
 from esi_bot import SNIPPET
 from esi_bot import MESSAGE
 from esi_bot import COMMANDS
@@ -67,7 +68,7 @@ class Processor(object):
             self._send_msg(random.choice(STARTUP_MSGS))
         return joined
 
-    def _send_msg(self, msg, attachments=None, channel=None):
+    def _send_msg(self, msg, attachments=None, unfurling=False, channel=None):
         """Sends a message to the channel, or the primary channel."""
 
         self._slack.api_call(
@@ -77,6 +78,20 @@ class Processor(object):
             attachments=attachments,
             username="ESI (bot)",
             icon_emoji=":techco:",
+            unfurl_links=unfurling,
+            unfurl_media=unfurling,
+        )
+
+    def _send_ephemeral(self, msg, user, channel, attachments=None):
+        """Sends an ephemeral message."""
+
+        self._slack.api_call(
+            "chat.postEphemeral",
+            channel=channel,
+            text=msg,
+            attachments=attachments,
+            user=user,
+            as_user=True,
         )
 
     def _send_snippet(self, reply, channel=None):
@@ -105,7 +120,7 @@ class Processor(object):
     def _process_snippet_reply(self, reply, event):
         """Process code snippet replies."""
 
-        if len(reply.content) > 2900:
+        if len(reply.content) > 2900 or reply.content.count("\n") > 9:
             self._send_snippet(reply, channel=event["channel"])
         else:
             self._send_msg(
@@ -126,10 +141,15 @@ class Processor(object):
             channel=event["channel"],
         )
 
+    def _process_ephemeral_reply(self, reply, event):
+        """Process ephemeral replies."""
+
+        self._send_ephemeral(reply.content, event["user"], event["channel"])
+
     def _process_str_reply(self, reply, event):
         """Process replies returning strings."""
 
-        self._send_msg(reply, channel=event["channel"])
+        self._send_msg(reply, unfurling=True, channel=event["channel"])
 
     def process_event(self, event):
         """Receive and process any/all Slack RTM API events."""
@@ -166,6 +186,8 @@ class Processor(object):
                         self._process_snippet_reply(reply, event)
                     elif isinstance(reply, REPLY):
                         self._process_message_reply(reply, event)
+                    elif isinstance(reply, EPHEMERAL):
+                        self._process_ephemeral_reply(reply, event)
                     else:
                         self._process_str_reply(reply, event)
             else:

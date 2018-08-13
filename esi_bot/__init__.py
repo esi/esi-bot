@@ -27,6 +27,7 @@ SNIPPET = namedtuple(
     ("content", "filename", "filetype", "comment", "title"),
 )
 REPLY = namedtuple("Reply", ("content", "attachments"))
+EPHEMERAL = namedtuple("Ephemeral", ("content", "attachments"))
 MESSAGE = namedtuple("Message", ("speaker", "command", "args"))
 COMMANDS = {}  # trigger: function
 EXTENDED_HELP = {}  # name: docstring

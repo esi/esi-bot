@@ -3,9 +3,11 @@
 
 import re
 import time
+from datetime import datetime
 
 from esi_bot import ESI
 from esi_bot import REPLY
+from esi_bot import EPHEMERAL
 from esi_bot import command
 from esi_bot import COMMANDS
 from esi_bot import do_request
@@ -46,12 +48,18 @@ def get_help(msg):
         else:
             commands.append(targets)
 
-    return "{}The following commands are enabled: {}".format(
-        # don't echo unknown commands and start a bot fight
-        "I'm sorry{}, that's an unknown command. ".format(
-            _fmt_speaker(msg)
-        ) * int(msg.command != "help"),
-        " ".join("`{}`".format(x) for x in commands),
+    cmd_list = "The following commands are enabled: {}".format(
+        " ".join("`{}`".format(x) for x in commands)
+    )
+
+    if msg.command == "help":
+        return cmd_list
+    return EPHEMERAL(
+        content="{} {}".format(
+            "I'm sorry, that's an unknown command.",
+            cmd_list,
+        ),
+        attachments=None,
     )
 
 
@@ -61,9 +69,9 @@ def hello(msg):
 
     if "whatup" in msg.args:
         return "not much. whatup{}".format(_fmt_speaker(msg))
-    elif msg.command in ("o7", "o/"):
+    if msg.command in ("o7", "o/"):
         return "o7{}".format(_fmt_speaker(msg))
-    elif msg.command == "7o":
+    if msg.command == "7o":
         return "7o{}".format(_fmt_speaker(msg))
     return "hey{} howsit goin?".format(_fmt_speaker(msg))
 
@@ -93,6 +101,9 @@ def _status_str(statuses):
             route["method"].upper().ljust(method_pad),
             route["route"],
         ) for route in statuses]
+        if len(statuses) > 99:
+            lines = lines[0:80]
+            lines.append("And {} more...".format(len(statuses) - 80))
         return "```{}```".format("\n".join(lines))
     return ""
 
@@ -109,39 +120,40 @@ def status(*_):
         else:
             return ":fire: (failed to fetch status.json)"
 
-    red_routes = [route for route in STATUS["status"] if
-                  route["status"] == "red"]
-    yellow_routes = [route for route in STATUS["status"] if
-                     route["status"] == "yellow"]
-
     attachments = []
-    if red_routes:
-        attachments.append({
-            "color": "danger",
-            "fallback": "{} red".format(len(red_routes)),
-            "text": "{emoji} {count} red {emoji} {details}".format(
-                emoji=":fire:" * int(max(
-                    round(len(red_routes) / len(STATUS["status"]) * 10),
-                    1,
-                )),
-                count=len(red_routes),
-                details=_status_str(red_routes),
-            )
-        })
-    if yellow_routes:
-        attachments.append({
-            "color": "warning",
-            "fallback": "{} yellow".format(len(yellow_routes)),
-            "text": "{emoji} {count} yellow {emoji} {details}".format(
-                emoji=":fire_engine:" * int(max(
-                    round(len(yellow_routes) / len(STATUS["status"]) * 10),
-                    1,
-                )),
-                count=len(yellow_routes),
-                details=_status_str(yellow_routes),
-            )
-        })
-    if not red_routes and not yellow_routes:
+    categories = [
+        ("red", ":fire:", "danger"),
+        ("yellow", ":fire_engine:", "warning"),
+        # ("green", ":ok_hand:", "good"),
+    ]
+
+    for status_color, emoji, color_value in categories:
+        routes = [route for route in STATUS["status"] if
+                  route["status"] == status_color]
+        if routes:
+            attachments.append({
+                "color": color_value,
+                "fallback": "{}: {} out of {}, {:.2%}".format(
+                    status_color.capitalize(),
+                    len(routes),
+                    len(STATUS["status"]),
+                    len(routes) / len(STATUS["status"]),
+                ),
+                "text": "{emoji} {count} {emoji} {details}".format(
+                    emoji=emoji * max(min(
+                        int(round(len(routes) / len(STATUS["status"]) * 10)),
+                        5), 1),
+                    count="{} {} (out of {}, {:.2%})".format(
+                        len(routes),
+                        status_color,
+                        len(STATUS["status"]),
+                        len(routes) / len(STATUS["status"]),
+                    ),
+                    details=_status_str(routes),
+                )
+            })
+
+    if not attachments:
         attachments.append({
             "color": "good",
             "text": ":ok_hand:",
@@ -155,10 +167,11 @@ def ids(*_):
     """Return a link to the ID ranges gist and asset location IDs doc."""
 
     return (
+        "ID ranges reference:"
         "https://gist.github.com/a-tal/5ff5199fdbeb745b77cb633b7f4400bb\n"
-        "assets: "
-        "https://docs.esi.evetech.net/docs/asset_location_id"
-    )
+        "Asset `location_id` reference: "
+        "{}docs/asset_location_id"
+    ).format(ESI_DOCS)
 
 
 @command
@@ -175,34 +188,104 @@ def faq(*_):
     return "{}docs/FAQ".format(ESI_DOCS)
 
 
-@command(trigger=("new", "bug", "br"))
-def new(msg):
-    """Return a link to open a new ESI bug."""
+ISSUE_NEW = {
+    "title": "Opening a new issue",
+    "title_link": "{}#opening-a-new-issue".format(ESI_DOCS),
+    "text": ("Before opening a new issue, please use the "
+             "<{}issues|search function> to see if a similar issue "
+             "exists, or has already been closed.").format(ESI_ISSUES),
+}
+ISSUE_BUG = {
+    "title": "Report a new bug",
+    "text": ("• unexpected 500 responses\n"
+             "• incorrect information in the swagger spec\n"
+             "• otherwise invalid or unexpected responses"),
+    "color": "danger",
+    "actions": [
+        {
+            "type": "button",
+            "text": "Report a bug",
+            "url": "{}issues/new?template=bug.md".format(ESI_ISSUES),
+            "style": "danger",
+        },
+    ],
+}
+ISSUE_FEATURE = {
+    "title": "Request a new feature",
+    "text": ("• adding an attribute to an existing route\n"
+             "• exposing other readily available client data\n"
+             "• meta requests, adding some global parameter to the specs"),
+    "color": "good",
+    "actions": [
+        {
+            "type": "button",
+            "text": "Request a feature",
+            "url": "{}issues/new?template=feature_request.md".format(
+                ESI_ISSUES
+            ),
+            "style": "primary",
+        },
+    ],
+}
+ISSUE_INCONSISTENCY = {
+    "title": "Report an inconsistency",
+    "text": ("• two endpoints returning slightly "
+             "different names for the same attribute\n"
+             "• attribute values are returned with "
+             "different formats for different routes"),
+    "color": "warning",
+    "actions": [
+        {
+            "type": "button",
+            "text": "Report an inconsistency",
+            "url": "{}issues/new?template=inconsistency.md".format(
+                ESI_ISSUES
+            ),
+        },
+    ],
+}
 
-    return (
-        "You can open a new bug with this link{}: "
-        "{}issues/new?template=bug.md"
-    ).format(_fmt_speaker(msg), ESI_ISSUES)
+
+@command(trigger="new")
+def new_issue(*_):
+    """Return instructions for opening a new ESI issue."""
+
+    return REPLY(content=None, attachments=[
+        ISSUE_NEW,
+        ISSUE_BUG,
+        ISSUE_FEATURE,
+        ISSUE_INCONSISTENCY,
+    ])
+
+
+@command(trigger=("bug", "br"))
+def bug(*_):
+    """Return instructions for reporting an ESI bug."""
+
+    return REPLY(content=None, attachments=[
+        ISSUE_NEW,
+        ISSUE_BUG,
+    ])
 
 
 @command(trigger=("feature", "fr", "enhancement"))
-def feature(msg):
-    """Return a link to create a new feature request."""
+def feature(*_):
+    """Return instructions for creating a new feature request."""
 
-    return (
-        "You can make a new feature request with this link{}: "
-        "{}issues/new?template=feature_request.md"
-    ).format(_fmt_speaker(msg), ESI_ISSUES)
+    return REPLY(content=None, attachments=[
+        ISSUE_NEW,
+        ISSUE_FEATURE,
+    ])
 
 
 @command
-def inconsistency(msg):
-    """Return a link to report an inconsistency."""
+def inconsistency(*_):
+    """Return instructions for reporting an inconsistency."""
 
-    return (
-        "You can report an inconsistency with this link{}: "
-        "{}issues/new?template=inconsistency.md"
-    ).format(_fmt_speaker(msg), ESI_ISSUES)
+    return REPLY(content=None, attachments=[
+        ISSUE_NEW,
+        ISSUE_INCONSISTENCY,
+    ])
 
 
 @command
@@ -261,8 +344,28 @@ def version(*_):
     return "ESI-bot version {}".format(__version__)
 
 
+def _running_for(start_time):
+    started = datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%SZ")
+    running_for = int((datetime.utcnow() - started).total_seconds())
+    if running_for < 60:
+        return "less than a minute"
+
+    running_for_list = []
+    units = [
+        (running_for // (60 * 60), "hour"),
+        ((running_for // 60) % 60, "minute"),
+    ]
+    for number, unit in units:
+        running_for_list.append("{} {}{}".format(
+            number,
+            unit,
+            "s" * (number != 1)
+        ))
+    return ", ".join(running_for_list)
+
+
 def server_status(datasource):
-    """Generate """
+    """Generate a reply describing the status of an EVE server/datasource."""
 
     if datasource not in ("tranquility", "singularity"):
         return "Cannot request server status for `{}`".format(datasource)
@@ -282,11 +385,15 @@ def server_status(datasource):
                 {
                     "title": "Players online",
                     "value": "{:,}".format(response["players"]),
+                },
+                {
+                    "title": "Started at",
+                    "value": response["start_time"],
                     "short": True,
                 },
                 {
-                    "title": "Server started",
-                    "value": response["start_time"],
+                    "title": "Running for",
+                    "value": _running_for(response["start_time"]),
                     "short": True,
                 },
             ],
@@ -298,9 +405,9 @@ def server_status(datasource):
             ),
         }
         if vip:
-            attachment["fields"].append({"title": "In VIP mode"})
+            attachment["fields"].insert(0, {"title": "In VIP mode"})
 
-    elif status == 503:
+    elif status_code == 503:
         attachment = {
             "color": "danger",
             "title": "{} status".format(server_name),
