@@ -183,6 +183,7 @@ class Processor(object):
                     event["text"],
                 )
             elif "message" in event and \
+                    "client_msg_id" in event["message"] and \
                     event.get("subtype") == "message_changed" and \
                     float(event["message"]["edited"]["ts"]) - \
                     float(event["message"]["ts"]) < self._edit_window:
