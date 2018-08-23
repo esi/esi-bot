@@ -21,7 +21,7 @@ def main():
     slack = SlackClient(os.environ["SLACK_TOKEN"])
     processor = Processor(slack)
     while True:
-        if slack.rtm_connect():
+        if slack.rtm_connect(auto_reconnect=True):
             if not processor.on_server_connect():
                 raise SystemExit("Could not join channels")
 
