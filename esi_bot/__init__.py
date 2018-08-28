@@ -10,6 +10,8 @@ import logging  # noqa E402
 import pkg_resources  # noqa E402
 from functools import partial  # noqa E402
 from collections import namedtuple  # noqa E402
+from concurrent.futures import as_completed  # noqa E402
+from concurrent.futures import ThreadPoolExecutor  # noqa E402
 
 import requests  # noqa E402
 from requests.adapters import HTTPAdapter  # noqa E402
@@ -70,11 +72,11 @@ def command(func=None, **kwargs):
     return None
 
 
-def do_request(url, *args, **kwargs):
+def do_request(url):
     """Make a GET request, return the status code and json response."""
 
     try:
-        res = SESSION.get(url, *args, **kwargs)
+        res = SESSION.get(url)
     except Exception as error:
         LOG.warning("failed to request %s: %r", url, error)
         return 499, "failed to request {}".format(url)
@@ -92,3 +94,26 @@ def do_request(url, *args, **kwargs):
         content = res.text
 
     return res.status_code, content
+
+
+def multi_request(urls):
+    """Request a bunch of urls in parallel.
+
+    Args:
+        urls: iterator of string urls to request
+
+    Returns:
+        dictionary of {url: (response_code, content)}
+    """
+
+    with ThreadPoolExecutor(max_workers=100) as pool:
+        futures = {}  # future: url
+
+        for url in urls:
+            futures[pool.submit(do_request, url)] = url
+
+        results = {}
+        for res in as_completed(futures.keys()):
+            results[futures[res]] = res.result()
+
+        return results

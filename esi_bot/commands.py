@@ -2,6 +2,7 @@
 
 
 import re
+import json
 import time
 from datetime import datetime
 
@@ -11,6 +12,7 @@ from esi_bot import EPHEMERAL
 from esi_bot import command
 from esi_bot import COMMANDS
 from esi_bot import do_request
+from esi_bot import multi_request
 from esi_bot import EXTENDED_HELP
 from esi_bot import __version__
 
@@ -440,3 +442,60 @@ def sisi(*_):
     """Display current status of Singularity, the main test server."""
 
     return server_status("singularity")
+
+
+@command(trigger=("item", "item_id"))
+def item(msg):
+    """Lookup an item by ID, including dogma information."""
+
+    if len(msg.args) != 1:
+        return "usage: !esi {} <id>".format(msg.command)
+
+    item_id = msg.args[0]
+
+    try:
+        int(item_id)
+    except Exception:
+        return "get outta here hackerman"
+
+    ret, res = do_request("{}/v3/universe/types/{}/".format(ESI, item_id))
+
+    dogma = res.pop("dogma_attributes", [])
+
+    # keep this out of fields for now to sort later without extra slicing
+    res_field = {
+        "title": "ESI JSON{}".format(" error" * int(ret != 200)),
+        "value": json.dumps(res, indent=4, sort_keys=True),
+    }
+    fields = []
+
+    attr_urls = {}  # url: attr
+    for attr in dogma:
+        url = "{}/v1/dogma/attributes/{}/".format(ESI, attr["attribute_id"])
+        attr_urls[url] = attr
+
+    for url, response in multi_request(attr_urls.keys()).items():
+        _ret, _res = response
+        attr = attr_urls[url]
+
+        if _ret == 200:
+            title = _res["name"]
+        else:
+            title = "failed to lookup attr: {}".format(attr["attribute_id"])
+
+        fields.append({"title": title, "value": attr["value"], "short": True})
+
+    return REPLY(content=None, attachments=[{
+        "color": "good" if ret == 200 else "warning",
+        "title": "Item {}: {}".format(item_id, res["name"])
+                 if ret == 200 else "Failed to lookup item {}".format(item_id),
+        "fields": [res_field] + sorted(fields, key=lambda x: x["title"]),
+        "fallback": "Item:\n{}\nDogma:\n{}".format(
+            json.dumps(res, indent=4, sort_keys=True),
+            json.dumps(
+                {x["title"]: x["value"] for x in fields},
+                indent=4,
+                sort_keys=True,
+            ),
+        ) if ret == 200 else "Failed to lookup item_id {}".format(item_id),
+    }])
