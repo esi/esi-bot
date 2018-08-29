@@ -465,27 +465,7 @@ def item(msg):
 
     ret, res = do_request(type_url)
 
-    dogma = res.pop("dogma_attributes", [])
-
-    attr_urls = {}  # url: attr
-    for attr in dogma:
-        url = "{}/v1/dogma/attributes/{}/".format(ESI, attr["attribute_id"])
-        attr_urls[url] = attr
-
-    dogma_attrs = {}  # name: value
-    for url, response in multi_request(attr_urls.keys()).items():
-        _ret, _res = response
-        attr = attr_urls[url]
-
-        if _ret == 200:
-            title = _res["name"]
-        else:
-            title = "failed to lookup attr: {}".format(attr["attribute_id"])
-
-        dogma_attrs[title] = attr["value"]
-
-    if dogma_attrs:
-        res["dogma_attributes"] = dogma_attrs
+    reqs = _expand_dogma(res, *_get_dogma_urls(res))
 
     return SNIPPET(
         content=json.dumps(res, sort_keys=True, indent=4),
@@ -494,9 +474,68 @@ def item(msg):
         comment="Item {}: {} ({:,d} request{} in {:,.0f}ms)".format(
             item_id,
             res["name"] if ret == 200 else "Error",
-            len(attr_urls) + 1,
-            "s" * int(len(attr_urls) > 0),
+            reqs + 1,
+            "s" * int(reqs > 0),
             (time.time() - start) * 1000,
         ),
         title=type_url,
     )
+
+
+def _get_dogma_urls(res):
+    """Modify the item response to extract dogma urls."""
+
+    dogma = res.pop("dogma_attributes", [])
+    effects = res.pop("dogma_effects", [])
+
+    attr_urls = {}  # url: attr
+    for attr in dogma:
+        url = "{}/v1/dogma/attributes/{}/".format(ESI, attr["attribute_id"])
+        attr_urls[url] = attr
+
+    effc_urls = {}  # url: effect
+    for effect in effects:
+        url = "{}/v1/dogma/effects/{}/".format(ESI, effect.pop("effect_id"))
+        effc_urls[url] = effect
+
+    return attr_urls, effc_urls
+
+
+def _expand_dogma(res, attr_urls, effc_urls):
+    """Expands dogma information in the type returns.
+
+    Returns:
+        integer number of additional requests made
+    """
+
+    dogma_attrs = {}  # name: value
+    dogma_effects = []
+
+    all_urls = list(attr_urls) + list(effc_urls)
+    for url, response in multi_request(all_urls).items():
+        _ret, _res = response
+
+        if url in attr_urls:
+            attr = attr_urls[url]
+            if _ret == 200:
+                title = _res["name"]
+            else:
+                title = "failed to lookup attr: {}".format(
+                    attr["attribute_id"]
+                )
+
+            dogma_attrs[title] = attr["value"]
+        else:
+            effect = effc_urls[url]
+            if _ret == 200:
+                effect["effect"] = _res
+                dogma_effects.append(effect)
+            else:
+                dogma_effects.append(effect)
+
+    if dogma_attrs:
+        res["dogma_attributes"] = dogma_attrs
+    if dogma_effects:
+        res["dogma_effects"] = dogma_effects
+
+    return len(all_urls)
