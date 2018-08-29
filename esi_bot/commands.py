@@ -491,10 +491,11 @@ def item(msg):
         content=json.dumps(res, sort_keys=True, indent=4),
         filename="{}.json".format(item_id),
         filetype="json",
-        comment="Item {}: {} ({:,d} requests in {:,.0f}ms)".format(
+        comment="Item {}: {} ({:,d} request{} in {:,.0f}ms)".format(
             item_id,
             res["name"] if ret == 200 else "Error",
             len(attr_urls) + 1,
+            "s" * int(len(attr_urls) > 0),
             (time.time() - start) * 1000,
         ),
         title=type_url,
