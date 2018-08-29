@@ -8,6 +8,7 @@ from datetime import datetime
 
 from esi_bot import ESI
 from esi_bot import REPLY
+from esi_bot import SNIPPET
 from esi_bot import EPHEMERAL
 from esi_bot import command
 from esi_bot import COMMANDS
@@ -448,6 +449,8 @@ def sisi(*_):
 def item(msg):
     """Lookup an item by ID, including dogma information."""
 
+    start = time.time()
+
     if len(msg.args) != 1:
         return "usage: !esi {} <id>".format(msg.command)
 
@@ -458,22 +461,18 @@ def item(msg):
     except Exception:
         return "get outta here hackerman"
 
-    ret, res = do_request("{}/v3/universe/types/{}/".format(ESI, item_id))
+    type_url = "{}/v3/universe/types/{}/".format(ESI, item_id)
+
+    ret, res = do_request(type_url)
 
     dogma = res.pop("dogma_attributes", [])
-
-    # keep this out of fields for now to sort later without extra slicing
-    res_field = {
-        "title": "ESI JSON{}".format(" error" * int(ret != 200)),
-        "value": json.dumps(res, indent=4, sort_keys=True),
-    }
-    fields = []
 
     attr_urls = {}  # url: attr
     for attr in dogma:
         url = "{}/v1/dogma/attributes/{}/".format(ESI, attr["attribute_id"])
         attr_urls[url] = attr
 
+    dogma_attrs = {}  # name: value
     for url, response in multi_request(attr_urls.keys()).items():
         _ret, _res = response
         attr = attr_urls[url]
@@ -483,19 +482,20 @@ def item(msg):
         else:
             title = "failed to lookup attr: {}".format(attr["attribute_id"])
 
-        fields.append({"title": title, "value": attr["value"], "short": True})
+        dogma_attrs[title] = attr["value"]
 
-    return REPLY(content=None, attachments=[{
-        "color": "good" if ret == 200 else "warning",
-        "title": "Item {}: {}".format(item_id, res["name"])
-                 if ret == 200 else "Failed to lookup item {}".format(item_id),
-        "fields": [res_field] + sorted(fields, key=lambda x: x["title"]),
-        "fallback": "Item:\n{}\nDogma:\n{}".format(
-            json.dumps(res, indent=4, sort_keys=True),
-            json.dumps(
-                {x["title"]: x["value"] for x in fields},
-                indent=4,
-                sort_keys=True,
-            ),
-        ) if ret == 200 else "Failed to lookup item_id {}".format(item_id),
-    }])
+    if dogma_attrs:
+        res["dogma_attributes"] = dogma_attrs
+
+    return SNIPPET(
+        content=json.dumps(res, sort_keys=True, indent=4),
+        filename="{}.json".format(item_id),
+        filetype="json",
+        comment="Item {}: {} ({:,d} requests in {:,.0f}ms)".format(
+            item_id,
+            res["name"] if ret == 200 else "Error",
+            len(attr_urls) + 1,
+            (time.time() - start) * 1000,
+        ),
+        title=type_url,
+    )
