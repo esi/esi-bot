@@ -495,7 +495,7 @@ def _get_dogma_urls(res):
 
     effc_urls = {}  # url: effect
     for effect in effects:
-        url = "{}/v1/dogma/effects/{}/".format(ESI, effect.pop("effect_id"))
+        url = "{}/v1/dogma/effects/{}/".format(ESI, effect["effect_id"])
         effc_urls[url] = effect
 
     return attr_urls, effc_urls
@@ -528,6 +528,8 @@ def _expand_dogma(res, attr_urls, effc_urls):
         else:
             effect = effc_urls[url]
             if _ret == 200:
+                # pls no duplication....
+                _res.pop("effect_id", None)
                 effect["effect"] = _res
                 dogma_effects.append(effect)
             else:
