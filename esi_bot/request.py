@@ -22,8 +22,12 @@ ESI_SPECS = {
 @command(trigger=re.compile(
     r"^<?(https://esi\.(evetech\.net|tech\.ccp\.is))?/(?P<esi_path>.+?)>?$"
 ))
-def request(match, *_):
-    """Make an ESI GET request, if the path is known."""
+def request(match, msg):
+    """Make an ESI GET request, if the path is known.
+
+    Options:
+        --headers    nest the response and add the headers
+    """
 
     version, *req_sections = match.groupdict()["esi_path"].split("/")
     if version not in ESI_SPECS:
@@ -51,13 +55,24 @@ def request(match, *_):
             params,
         )
         start = time.time()
-        status, res = do_request(url)
+        res = do_request(url, return_response=True)
+
         try:
-            status = http.HTTPStatus(status)  # pylint: disable=E1120
+            content = res.json()
+        except Exception:
+            content = res.text
+
+        try:
+            status = http.HTTPStatus(res.status_code)  # pylint: disable=E1120
         except ValueError:
-            pass
+            status = str(res.status_code)
         else:
             status = "{} {}".format(status.value, status.name)
+
+        if "--headers" in msg.args:
+            res = {"response": content, "headers": dict(res.headers)}
+        else:
+            res = content
 
         return SNIPPET(
             content=json.dumps(res, sort_keys=True, indent=4),

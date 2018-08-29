@@ -72,7 +72,7 @@ def command(func=None, **kwargs):
     return None
 
 
-def do_request(url):
+def do_request(url, return_response=False):
     """Make a GET request, return the status code and json response."""
 
     try:
@@ -87,6 +87,9 @@ def do_request(url):
         LOG.warning("request to %s failed: %r", url, error)
     else:
         LOG.info("requested: %s", url)
+
+    if return_response:
+        return res
 
     try:
         content = res.json()
