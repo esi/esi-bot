@@ -11,6 +11,7 @@ from esi_bot import ESI
 from esi_bot import SNIPPET
 from esi_bot import command
 from esi_bot import do_request
+from esi_bot import multi_request
 
 
 ESI_SPECS = {
@@ -100,15 +101,20 @@ def do_refresh():
             if version not in ESI_SPECS:
                 ESI_SPECS[version] = {"timestamp": 0, "spec": {}}
 
-    updates = {}
+    spec_urls = {}  # url: version
     for version, details in ESI_SPECS.items():
         if not details["spec"] or details["timestamp"] < time.time() + 300:
-            status, spec = do_request("{}/{}/swagger.json".format(
+            url = "{}/{}/swagger.json".format(
                 ESI,
                 version,
-            ))
-            if status == 200:
-                updates[version] = {"timestamp": time.time(), "spec": spec}
+            )
+            spec_urls[url] = version
+
+    updates = {}
+    for url, result in multi_request(spec_urls.keys()).items():
+        status, spec = result
+        if status == 200:
+            updates[spec_urls[url]] = {"timestamp": time.time(), "spec": spec}
 
     ESI_SPECS.update(updates)
     return list(updates)
