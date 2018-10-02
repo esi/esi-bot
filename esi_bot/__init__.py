@@ -25,6 +25,7 @@ logging.basicConfig(
 )
 
 ESI = "https://esi.evetech.net"
+ESI_CHINA = "https://esi.evepc.163.com"
 SNIPPET = namedtuple(
     "Snippet",
     ("content", "filename", "filetype", "comment", "title"),

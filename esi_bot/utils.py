@@ -1,6 +1,10 @@
 """Common ESI-bot helper functions."""
 
 
+from esi_bot import ESI
+from esi_bot import ESI_CHINA
+
+
 def paginated_id_to_names(slack, method, key, **kwargs):
     """Call the paginated method via slack, return a dict of id: name."""
 
@@ -19,3 +23,14 @@ def paginated_id_to_names(slack, method, key, **kwargs):
             break
 
     return mapping
+
+
+def esi_base_url(message):
+    """Return the base URL for ESI given the args in message."""
+
+    for arg in ("china", "cn", "serenity"):
+        if arg in message.args or \
+                "-{}".format(arg) in message.args or \
+                "--{}".format(arg) in message.args:
+            return ESI_CHINA
+    return ESI

@@ -5,7 +5,7 @@ jobs=4
 
 [MESSAGES CONTROL]
 
-disable=fixme
+disable=fixme,invalid-sequence-index
 
 
 [REPORTS]

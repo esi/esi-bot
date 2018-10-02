@@ -8,19 +8,31 @@ import html
 import http
 
 from esi_bot import ESI
+from esi_bot import ESI_CHINA
 from esi_bot import SNIPPET
 from esi_bot import command
 from esi_bot import do_request
 from esi_bot import multi_request
+from esi_bot.utils import esi_base_url
+
+
+def _initial_specs():
+    """Return an initial empty specs dictionary."""
+
+    return {
+        x: {"timestamp": 0, "spec": {}} for x in ("latest", "legacy", "dev")
+    }
 
 
 ESI_SPECS = {
-    x: {"timestamp": 0, "spec": {}} for x in ("latest", "legacy", "dev")
+    ESI: _initial_specs(),
+    ESI_CHINA: _initial_specs(),
 }
 
 
 @command(trigger=re.compile(
-    r"^<?(https://esi\.(evetech\.net|tech\.ccp\.is))?/(?P<esi_path>.+?)>?$"
+    r"^<?(?P<esi>https://esi\.(evetech\.net|tech\.ccp\.is|evepc\.163\.com))?"
+    r"/(?P<esi_path>.+?)>?$"
 ))
 def request(match, msg):
     """Make an ESI GET request, if the path is known.
@@ -29,8 +41,15 @@ def request(match, msg):
         --headers    nest the response and add the headers
     """
 
-    version, *req_sections = match.groupdict()["esi_path"].split("/")
-    if version not in ESI_SPECS:
+    match_group = match.groupdict()
+
+    if "evepc.163.com" in (match_group["esi"] or ""):
+        base_url = ESI_CHINA
+    else:
+        base_url = esi_base_url(msg)
+
+    version, *req_sections = match_group["esi_path"].split("/")
+    if version not in ESI_SPECS[base_url]:
         req_sections.insert(0, version)
         version = "latest"
 
@@ -46,9 +65,9 @@ def request(match, msg):
 
     params = html.unescape(params)
     path = "/{}/".format("/".join(x for x in req_sections if x))
-    if _valid_path(path, version):
+    if _valid_path(base_url, path, version):
         url = "{}/{}{}{}{}".format(
-            ESI,
+            base_url,
             version,
             path,
             "?" * int(params != ""),
@@ -85,44 +104,47 @@ def request(match, msg):
             title=url,
         )
 
-    return "failed to find GET {} in the {} ESI spec".format(path, version)
+    return "failed to find GET {} in the {} ESI{} spec".format(
+        path,
+        version,
+        " China" * int(base_url == ESI_CHINA),
+    )
 
 
 @command(trigger="refresh")
-def refresh(*_):
+def refresh(msg):
     """Refresh internal specs."""
 
-    refreshed = do_refresh()
+    base_url = esi_base_url(msg)
+    refreshed = do_refresh(base_url)
     if refreshed:
-        return "I refreshed my internal copy of the {}{}{} spec{}".format(
+        return "I refreshed my internal copy of the {}{}{} spec{}{}".format(
             ", ".join(refreshed[:-1]),
             " and " * int(len(refreshed) > 1),
             refreshed[-1],
             "s" * int(len(refreshed) != 1),
+            " for ESI China" * int(base_url == ESI_CHINA),
         )
     return "my internal specs are up to date (try again later)"
 
 
-def do_refresh():
+def do_refresh(base_url):
     """DRY helper to refresh all stale ESI specs.
 
     Returns:
         list of updated ESI spec versions
     """
 
-    status, versions = do_request("{}/versions/".format(ESI))
+    status, versions = do_request("{}/versions/".format(base_url))
     if status == 200:
         for version in versions:
-            if version not in ESI_SPECS:
-                ESI_SPECS[version] = {"timestamp": 0, "spec": {}}
+            if version not in ESI_SPECS[base_url]:
+                ESI_SPECS[base_url][version] = {"timestamp": 0, "spec": {}}
 
     spec_urls = {}  # url: version
-    for version, details in ESI_SPECS.items():
+    for version, details in ESI_SPECS[base_url].items():
         if not details["spec"] or details["timestamp"] < time.time() + 300:
-            url = "{}/{}/swagger.json".format(
-                ESI,
-                version,
-            )
+            url = "{}/{}/swagger.json".format(base_url, version)
             spec_urls[url] = version
 
     updates = {}
@@ -131,17 +153,22 @@ def do_refresh():
         if status == 200:
             updates[spec_urls[url]] = {"timestamp": time.time(), "spec": spec}
 
-    ESI_SPECS.update(updates)
+    ESI_SPECS[base_url].update(updates)
     return list(updates)
 
 
-def _valid_path(path, version):
+def _valid_path(base_url, path, version):
     """Check if the path is known."""
 
-    spec = ESI_SPECS[version]["spec"]
+    try:
+        spec = ESI_SPECS[base_url][version]["spec"]
+    except KeyError:
+        return False
+
     for spec_path, operations in spec["paths"].items():
         # we could pre-validate arguments.... *effort* though
         if re.match(re.sub(r"{.*}", "[^/]+", spec_path), path):
             # we only make get requests
             return "get" in operations
+
     return False

@@ -51,7 +51,7 @@ REACTION_TRIGGERS = {
 UNMATCHED = object()
 
 
-class Processor(object):
+class Processor:
     """Execute ESI-bot commands based on incoming messages."""
 
     def __init__(self, slack):

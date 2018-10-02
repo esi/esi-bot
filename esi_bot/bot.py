@@ -6,9 +6,11 @@ import time
 
 from slackclient import SlackClient
 
+from esi_bot import ESI
+from esi_bot import ESI_CHINA
 from esi_bot import LOG
 from esi_bot import request
-from esi_bot import commands  # noqa F401  # pylint: disable=unused-import
+from esi_bot import commands  # pylint: disable=unused-import;  # noqa F401
 from esi_bot.processor import Processor
 
 
@@ -16,7 +18,8 @@ def main():
     """Connect to the slack RTM API and pull messages forever."""
 
     LOG.info("ESI bot launched")
-    request.do_refresh()
+    request.do_refresh(ESI)
+    request.do_refresh(ESI_CHINA)
     LOG.info("Loaded ESI specs")
     slack = SlackClient(os.environ["SLACK_TOKEN"])
     processor = Processor(slack)

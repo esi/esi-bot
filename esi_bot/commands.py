@@ -7,6 +7,7 @@ import time
 from datetime import datetime
 
 from esi_bot import ESI
+from esi_bot import ESI_CHINA
 from esi_bot import REPLY
 from esi_bot import SNIPPET
 from esi_bot import EPHEMERAL
@@ -16,9 +17,13 @@ from esi_bot import do_request
 from esi_bot import multi_request
 from esi_bot import EXTENDED_HELP
 from esi_bot import __version__
+from esi_bot.utils import esi_base_url
 
 
-STATUS = {"timestamp": 0, "status": []}
+STATUS = {
+    ESI: {"timestamp": 0, "status": []},
+    ESI_CHINA: {"timestamp": 0, "status": []},
+}
 ESI_ISSUES = "https://github.com/esi/esi-issues/"
 ESI_DOCS = "https://docs.esi.evetech.net/"
 
@@ -112,14 +117,16 @@ def _status_str(statuses):
 
 
 @command
-def status(*_):
+def status(msg):
     """Return the current ESI health/status."""
 
+    base_url = esi_base_url(msg)
+
     now = time.time()
-    if now - STATUS["timestamp"] > 60:
-        code, esi_status = do_request("{}/status.json".format(ESI))
+    if now - STATUS[base_url]["timestamp"] > 60:
+        code, esi_status = do_request("{}/status.json".format(base_url))
         if code == 200:
-            STATUS["status"] = esi_status
+            STATUS[base_url]["status"] = esi_status
         else:
             return ":fire: (failed to fetch status.json)"
 
@@ -128,9 +135,10 @@ def status(*_):
         ("red", ":fire:", "danger"),
         ("yellow", ":fire_engine:", "warning"),
     ]
+    status_json = STATUS[base_url]["status"]
 
     for status_color, emoji, color_value in categories:
-        routes = [route for route in STATUS["status"] if
+        routes = [route for route in status_json if
                   route["status"] == status_color]
         if routes:
             attachments.append({
@@ -138,18 +146,18 @@ def status(*_):
                 "fallback": "{}: {} out of {}, {:.2%}".format(
                     status_color.capitalize(),
                     len(routes),
-                    len(STATUS["status"]),
-                    len(routes) / len(STATUS["status"]),
+                    len(status_json),
+                    len(routes) / len(status_json),
                 ),
                 "text": "{emoji} {count} {emoji} {details}".format(
                     emoji=emoji * max(min(
-                        int(round(len(routes) / len(STATUS["status"]) * 10)),
+                        int(round(len(routes) / len(status_json) * 10)),
                         5), 1),
                     count="{} {} (out of {}, {:.2%})".format(
                         len(routes),
                         status_color,
-                        len(STATUS["status"]),
-                        len(routes) / len(STATUS["status"]),
+                        len(status_json),
+                        len(routes) / len(status_json),
                     ),
                     details=_status_str(routes),
                 )
@@ -305,27 +313,27 @@ def sso(*_):
 
 
 @command(trigger=("ui", "webui"))
-def webui(*_):
+def webui(msg):
     """Return a link to the ui (v3)."""
 
-    return "{}/ui/".format(ESI)
+    return "{}/ui/".format(esi_base_url(msg))
 
 
 @command(trigger=("legacy", "v2ui"))
-def legacy(*_):
+def legacy(msg):
     """Return links to the old v2 ui."""
 
     return (
         "Legacy (v2) UIs are still available at {esi}/latest/ "
         "{esi}/dev/ and {esi}/legacy/"
-    ).format(esi=ESI)
+    ).format(esi=esi_base_url(msg))
 
 
 @command(trigger=("diff", "diffs"))
-def diff(*_):
+def diff(msg):
     """Return a link to the ESI spec diffs page."""
 
-    return "{}/diff/latest/dev/".format(ESI)
+    return "{}/diff/latest/dev/".format(esi_base_url(msg))
 
 
 @command(trigger=("source", "repo"))
@@ -369,17 +377,21 @@ def _running_for(start_time):
 def server_status(datasource):
     """Generate a reply describing the status of an EVE server/datasource."""
 
-    if datasource not in ("tranquility", "singularity"):
+    if datasource in ("tranquility", "singularity"):
+        base_url = ESI
+    elif datasource == "serenity":
+        base_url = ESI_CHINA
+    else:
         return "Cannot request server status for `{}`".format(datasource)
 
     status_code, response = do_request("{}/v1/status/?datasource={}".format(
-        ESI,
+        base_url,
         datasource,
     ))
     server_name = datasource.capitalize()
 
     if status_code == 200:
-        vip = response.get("vip")
+        vip = response.get("vip")  # pylint: disable=no-member
         attachment = {
             "color": "warning" if vip else "good",
             "title": "{} status".format(server_name),
@@ -445,6 +457,13 @@ def sisi(*_):
     return server_status("singularity")
 
 
+@command
+def serenity(*_):
+    """Display current status of Serenity, the main server in China."""
+
+    return server_status("serenity")
+
+
 @command(trigger=("item", "item_id"))
 def item(msg):
     """Lookup an item by ID, including dogma information."""
@@ -461,11 +480,11 @@ def item(msg):
     except Exception:
         return "get outta here hackerman"
 
-    type_url = "{}/v3/universe/types/{}/".format(ESI, item_id)
+    type_url = "{}/v3/universe/types/{}/".format(esi_base_url(msg), item_id)
 
     ret, res = do_request(type_url)
 
-    reqs = _expand_dogma(res, *_get_dogma_urls(res))
+    reqs = _expand_dogma(res, *_get_dogma_urls(msg, res))
 
     return SNIPPET(
         content=json.dumps(res, sort_keys=True, indent=4),
@@ -482,20 +501,21 @@ def item(msg):
     )
 
 
-def _get_dogma_urls(res):
+def _get_dogma_urls(msg, res):
     """Modify the item response to extract dogma urls."""
 
     dogma = res.pop("dogma_attributes", [])
     effects = res.pop("dogma_effects", [])
+    base = esi_base_url(msg)
 
     attr_urls = {}  # url: attr
     for attr in dogma:
-        url = "{}/v1/dogma/attributes/{}/".format(ESI, attr["attribute_id"])
+        url = "{}/v1/dogma/attributes/{}/".format(base, attr["attribute_id"])
         attr_urls[url] = attr
 
     effc_urls = {}  # url: effect
     for effect in effects:
-        url = "{}/v1/dogma/effects/{}/".format(ESI, effect["effect_id"])
+        url = "{}/v1/dogma/effects/{}/".format(base, effect["effect_id"])
         effc_urls[url] = effect
 
     return attr_urls, effc_urls

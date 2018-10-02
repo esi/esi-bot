@@ -6,7 +6,7 @@ import time
 from esi_bot.utils import paginated_id_to_names
 
 
-class Users(object):
+class Users:
     """Keep a cache of user IDs to names, perform refreshes."""
 
     def __init__(self, slack):

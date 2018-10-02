@@ -7,7 +7,7 @@ import time
 from esi_bot.utils import paginated_id_to_names
 
 
-class Channels(object):
+class Channels:
     """Join and store channel IDs -> names."""
 
     def __init__(self, slack):
