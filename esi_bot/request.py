@@ -78,7 +78,7 @@ def request(match, msg):
 
         try:
             content = res.json()
-        except Exception:
+        except ValueError:
             content = res.text
 
         try:

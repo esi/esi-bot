@@ -4,6 +4,7 @@
 import re
 import json
 import time
+import typing
 from datetime import datetime
 
 from esi_bot import ESI
@@ -48,7 +49,7 @@ def get_help(msg):
     for targets in COMMANDS:
         if isinstance(targets, (list, tuple)):
             commands.append(", ".join(targets))
-        elif isinstance(targets, re._pattern_type):
+        elif isinstance(targets, typing.Pattern):
             commands.append("{}: {}".format(
                 COMMANDS[targets].__name__,
                 targets.pattern,
@@ -177,7 +178,7 @@ def ids(*_):
     """Return a link to the ID ranges gist and asset location IDs doc."""
 
     return (
-        "ID ranges reference:"
+        "ID ranges reference: "
         "https://gist.github.com/a-tal/5ff5199fdbeb745b77cb633b7f4400bb\n"
         "Asset `location_id` reference: "
         "{}docs/asset_location_id"
@@ -464,9 +465,9 @@ def serenity(*_):
     return server_status("serenity")
 
 
-@command(trigger=("item", "item_id"))
+@command(trigger=("item", "item_id", "type", "type_id"))
 def item(msg):
-    """Lookup an item by ID, including dogma information."""
+    """Look up a type by ID, including dogma information."""
 
     start = time.time()
 
@@ -477,7 +478,7 @@ def item(msg):
 
     try:
         int(item_id)
-    except Exception:
+    except ValueError:
         return "get outta here hackerman"
 
     type_url = "{}/v3/universe/types/{}/".format(esi_base_url(msg), item_id)

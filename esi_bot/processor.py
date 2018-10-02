@@ -5,6 +5,7 @@ import os
 import re
 import time
 import random
+import typing
 from datetime import datetime
 
 from esi_bot import LOG
@@ -44,8 +45,9 @@ STARTUP_MSGS = (
 )
 
 REACTION_TRIGGERS = {
-    re.compile(r"(^|.*( |!))crest( |$|!|\?|\.|,)", re.IGNORECASE): "rip",
-    re.compile(r"(^|.*( |!))xml(api)?( |$|!|\?|\.|,)", re.IGNORECASE): "wreck",
+    re.compile(r"(?:^|[\W_])crest(?:$|[\W_])", re.IGNORECASE): "rip",
+    re.compile(r"(?:^|[\W_])xml(?:[\W_]?api)?(?:$|[\W_])",
+               re.IGNORECASE): "wreck",
 }
 
 UNMATCHED = object()
@@ -282,7 +284,7 @@ def _process_msg(msg):
         if isinstance(triggers, (list, tuple)):
             if msg.command in triggers:
                 return msg.command, func(msg)
-        elif isinstance(triggers, re._pattern_type):
+        elif isinstance(triggers, typing.Pattern):
             match = re.match(triggers, msg.command)
             if match:
                 return msg.command, func(match, msg)
