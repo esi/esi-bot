@@ -76,8 +76,13 @@ def command(func=None, **kwargs):
 def do_request(url, return_response=False):
     """Make a GET request, return the status code and json response."""
 
+    if url.startswith(ESI_CHINA) and "language" not in url:
+        headers = {"Accept-Language": "zh"}
+    else:
+        headers = {}
+
     try:
-        res = SESSION.get(url)
+        res = SESSION.get(url, headers=headers)
     except Exception as error:
         LOG.warning("failed to request %s: %r", url, error)
         return 499, "failed to request {}".format(url)

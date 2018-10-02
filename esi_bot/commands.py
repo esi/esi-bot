@@ -471,7 +471,7 @@ def item(msg):
 
     start = time.time()
 
-    if len(msg.args) != 1:
+    if not msg.args:
         return "usage: !esi {} <id>".format(msg.command)
 
     item_id = msg.args[0]
