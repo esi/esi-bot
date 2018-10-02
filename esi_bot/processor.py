@@ -177,7 +177,7 @@ class Processor(object):
             if "user" in event and "client_msg_id" in event:
                 self._process_once(
                     event["client_msg_id"],  # not present in self msgs
-                    float(event["ts"]),
+                    event["ts"],
                     event["channel"],
                     event["user"],
                     event["text"],
@@ -190,7 +190,7 @@ class Processor(object):
                     float(event["message"]["ts"]) < self._edit_window:
                 self._process_once(
                     event["message"]["client_msg_id"],
-                    float(event["message"]["ts"]),
+                    event["message"]["ts"],
                     event["channel"],
                     event["message"]["edited"]["user"],
                     event["message"]["text"],
@@ -208,13 +208,13 @@ class Processor(object):
             return
 
         if self._process_event(timestamp, *args):  # pylint: disable=E1120
-            self._replied_to[msg_id] = timestamp
+            self._replied_to[msg_id] = float(timestamp)
 
     def _process_event(self, timestamp, channel, user, text):
         """Process valid events, look for our prefix or add a reaction.
 
         Args:
-            timestamp: float, unix timestamp
+            timestamp: string, unix timestamp
             channel: slack channel uuid
             user: slack speaker uuid
             text: string, raw event text
@@ -230,7 +230,7 @@ class Processor(object):
         user_name = self._users.get_name(user)
         LOG.info(
             "[%s] @%s: %s",
-            datetime.utcfromtimestamp(int(timestamp)),
+            datetime.utcfromtimestamp(int(float(timestamp))),
             user_name,
             text,
         )
