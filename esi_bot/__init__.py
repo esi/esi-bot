@@ -26,6 +26,8 @@ logging.basicConfig(
 
 ESI = "https://esi.evetech.net"
 ESI_CHINA = "https://esi.evepc.163.com"
+ESI_ISSUES = "https://github.com/esi/esi-issues/"
+ESI_DOCS = "https://docs.esi.evetech.net/"
 SNIPPET = namedtuple(
     "Snippet",
     ("content", "filename", "filetype", "comment", "title"),
@@ -65,6 +67,8 @@ def command(func=None, **kwargs):
     if func is None:
         return partial(command, **kwargs)
 
+    LOG.info("Registered command '%s'", func.__name__)
+
     COMMANDS[kwargs.get("trigger", func.__name__)] = func
     EXTENDED_HELP[func.__name__] = func.__doc__
     if isinstance(kwargs.get("trigger"), (list, tuple)):
@@ -99,7 +103,7 @@ def do_request(url, return_response=False):
 
     try:
         content = res.json()
-    except Exception:
+    except ValueError:
         content = res.text
 
     return res.status_code, content
