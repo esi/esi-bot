@@ -10,8 +10,17 @@ from esi_bot import ESI
 from esi_bot import ESI_CHINA
 from esi_bot import LOG
 from esi_bot import request
-from esi_bot import commands  # pylint: disable=unused-import;  # noqa F401
 from esi_bot.processor import Processor
+from esi_bot.commands import (  # pylint: disable=unused-import;  # noqa F401
+    get_help,
+    issue_details,
+    issue_new,
+    links,
+    misc,
+    status_esi,
+    status_server,
+    type_info
+)
 
 
 def main():
