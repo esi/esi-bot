@@ -1,6 +1,5 @@
 """Message processing for ESI-bot."""
 
-
 import os
 import re
 import time
@@ -16,7 +15,6 @@ from esi_bot import MESSAGE
 from esi_bot import COMMANDS
 from esi_bot.users import Users
 from esi_bot.channels import Channels
-
 
 STARTUP_MSGS = (
     "hello, world",
@@ -45,9 +43,10 @@ STARTUP_MSGS = (
 )
 
 REACTION_TRIGGERS = {
-    re.compile(r"(?:^|[\W_])crest(?:$|[\W_])", re.IGNORECASE): "rip",
-    re.compile(r"(?:^|[\W_])xml(?:[\W_]?api)?(?:$|[\W_])",
-               re.IGNORECASE): "wreck",
+    re.compile(r"(?:^|[\W_])crest(?:$|[\W_])", re.IGNORECASE):
+        "rip",
+    re.compile(r"(?:^|[\W_])xml(?:[\W_]?api)?(?:$|[\W_])", re.IGNORECASE):
+        "wreck",
 }
 
 UNMATCHED = object()
@@ -55,7 +54,6 @@ UNMATCHED = object()
 
 class Processor:
     """Execute ESI-bot commands based on incoming messages."""
-
     def __init__(self, slack):
         """Create a new processor instance."""
 
@@ -117,7 +115,7 @@ class Processor:
         """Send a snippet to the channel, or the primary channel."""
 
         # There is a 1 megabyte file size limit for files uploaded as snippets.
-        megb = 1024 ** 2
+        megb = 1024**2
         if len(reply.content) > megb:
             snip = "<snipped>"
             content = "{}{}".format(reply.content[:megb - len(snip)], snip)
@@ -230,7 +228,7 @@ class Processor:
             return False
 
         user_name = self._users.get_name(user)
-        LOG.info(
+        LOG.debug(
             "[%s] @%s: %s",
             datetime.utcfromtimestamp(int(float(timestamp))),
             user_name,
