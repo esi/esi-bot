@@ -1,13 +1,11 @@
 """ESI slack bot."""
 
-
 import os
 from setuptools import setup
 from setuptools import find_packages
 from setuphelpers import git_version
 from setuphelpers import test_command
 from setuphelpers import long_description
-
 
 setup(
     name="esi-bot",
@@ -22,7 +20,7 @@ setup(
     download_url="https://github.com/esi/esi-bot/",
     install_requires=[
         "requests >= 2.18.4",
-        "slackclient >= 1.2.1",
+        "slackclient == 1.3.2",
         "gevent >= 1.2.2",
     ],
     setup_requires=["setuphelpers >= 0.1.2"],

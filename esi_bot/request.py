@@ -86,7 +86,7 @@ def request(match, msg):
         except ValueError:
             status = str(res.status_code)
         else:
-            status = "{} {}".format(status.value, status.name)
+            status = "{} {}".format(status.value, status.name)  # pylint: disable=E1101
 
         if "--headers" in msg.args:
             res = {"response": content, "headers": dict(res.headers)}
