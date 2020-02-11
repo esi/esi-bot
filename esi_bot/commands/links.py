@@ -19,13 +19,6 @@ def ids(*_):
 
 
 @command
-def waffle(*_):
-    """Return a link to the ESI issues waffle board."""
-
-    return "https://waffle.io/esi/esi-issues"
-
-
-@command
 def faq(*_):
     """Return a link to the ESI issues FAQ."""
 
@@ -51,16 +44,6 @@ def webui(msg):
     """Return a link to the ui (v3)."""
 
     return "{}/ui/".format(esi_base_url(msg))
-
-
-@command(trigger=("legacy", "v2ui"))
-def legacy(msg):
-    """Return links to the old v2 ui."""
-
-    return (
-        "Legacy (v2) UIs are still available at {esi}/latest/ "
-        "{esi}/dev/ and {esi}/legacy/"
-    ).format(esi=esi_base_url(msg))
 
 
 @command(trigger=("diff", "diffs"))

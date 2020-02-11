@@ -16,13 +16,6 @@ def tranquility(*_):
     return server_status("tranquility")
 
 
-@command(trigger=("sisi", "singularity"))
-def singularity(*_):
-    """Display current status of Singularity, the main test server."""
-
-    return server_status("singularity")
-
-
 @command
 def serenity(*_):
     """Display current status of Serenity, the main server in China."""
@@ -33,7 +26,7 @@ def serenity(*_):
 def server_status(datsource):
     """Generate a reply describing the status of an EVE server/datasource."""
 
-    if datsource in ("tranquility", "singularity"):
+    if datsource == "tranquility":
         base_url = ESI
     elif datsource == "serenity":
         base_url = ESI_CHINA

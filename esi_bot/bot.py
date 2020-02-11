@@ -11,7 +11,7 @@ from esi_bot import LOG
 from esi_bot import request
 from esi_bot.processor import Processor
 from esi_bot.commands import (  # noqa: F401;  # pylint: disable=unused-import
-    get_help, issue_details, issue_new, status_esi, status_server, type_info)
+    get_help, issue_details, issue_new, links, misc, status_esi, status_server, type_info)
 
 
 def main():
