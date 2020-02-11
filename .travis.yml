@@ -1,8 +1,8 @@
 language: python
 python:
-  - "3.6"
+  - "3.7"
 env:
-  - TOXENV=python3.6
+  - TOXENV=python3.7
   - TOXENV=pylint
   - TOXENV=flake8
 before_install:

@@ -1,6 +1,6 @@
 # esi-bot
 
-FROM python:3.6
+FROM python:3.7
 MAINTAINER Adam Talsma <adam@talsma.ca>
 
 ADD requirements.txt /bot/
