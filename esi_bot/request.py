@@ -31,7 +31,7 @@ ESI_SPECS = {
 
 
 @command(trigger=re.compile(
-    r"^<?(?P<esi>https://esi\.(evetech\.net|tech\.ccp\.is|evepc\.163\.com))?"
+    r"^<?(?P<esi>https://esi\.(evetech\.net|evepc\.163\.com))?"
     r"/(?P<esi_path>.+?)>?$"
 ))
 def request(match, msg):
