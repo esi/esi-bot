@@ -1,6 +1,5 @@
 """ESI Slack bot."""
 
-
 # pylint: disable=unused-argument,wrong-import-position,wrong-import-order
 from gevent import monkey
 monkey.patch_all()
@@ -16,11 +15,11 @@ from concurrent.futures import ThreadPoolExecutor  # noqa E402
 import requests  # noqa E402
 from requests.adapters import HTTPAdapter  # noqa E402
 
-
 LOG = logging.getLogger(__name__)
-LOG.setLevel(getattr(logging, os.environ.get("ESI_BOT_LOG_LEVEL", "INFO")))
+LOG_LEVEL = getattr(logging, os.environ.get("ESI_BOT_LOG_LEVEL", "INFO"))
+LOG.setLevel(LOG_LEVEL)
 logging.basicConfig(
-    level=logging.INFO,
+    level=LOG_LEVEL,
     format="%(asctime)s:%(name)s:%(levelname)s: %(message)s",
 )
 
